@@ -1,0 +1,55 @@
+specVersion: 0.0.4
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: IERC721
+    network: mumbai
+    source:
+      abi: IERC721
+      startBlock: 28217454
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - transfer
+        - transaction
+        - account
+      abis:
+        - name: IERC721
+          file: IERC721\node_modules\@openzeppelin\contracts\build\contracts\IERC721.json
+        - name: IERC721Metadata
+          file: IERC721\node_modules\@openzeppelin\contracts\build\contracts\IERC721Metadata.json
+        - name: Contract721
+          file: IERC721\abis\Contract721.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: IERC721\IERC721.wasm
+  - kind: ethereum
+    name: Contract
+    network: mumbai
+    source:
+      address: "0xa9EBa0cc148FC3Ab7E9863Cdb6907cEcBD8B1dAD"
+      abi: Contract
+      startBlock: 28217454
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - collection
+        - token
+        - sale
+      abis:
+        - name: Contract
+          file: Contract\abis\Contract.json
+        - name: ERC20
+          file: Contract\node_modules\@openzeppelin\contracts\build\contracts\ERC20.json
+      eventHandlers:
+        - event: ItemSold(indexed address,indexed address,indexed uint32,uint256)
+          handler: handleItemSale
+        - event: ItemListed(indexed address,indexed uint32,indexed uint256)
+          handler: handleNewListing
+      file: Contract\Contract.wasm
