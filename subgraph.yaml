@@ -1,17 +1,64 @@
-specVersion: 0.0.4
+specVersion: 0.0.5
 schema:
   file: ./schema.graphql
 dataSources:
-  #### All ERC721 ####
-  - kind: ethereum/contract
+  - kind: ethereum
+    name: Marketplace
+    network: mumbai
+    source:
+      address: "0x9f98322108648d7479d0ad85edb3cf193964dadb"
+      abi: Marketplace
+      startBlock: 35793319
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - supportedCollection
+        - protocol
+        - saleInfo
+      abis:
+        - name: Marketplace
+          file: ./abis/Marketplace.json
+        - name: IERC721
+          file: ./node_modules/@openzeppelin/contracts/build/contracts/IERC721.json
+        - name: IERC721Metadata
+          file: ./node_modules/@openzeppelin/contracts/build/contracts/IERC721Metadata.json
+        - name: Contract721
+          file: ./abis/Contract721.json
+      eventHandlers:
+        - event: CollectionAdded(indexed address,address,uint256)
+          handler: handleCollectionAdded
+        - event: CollectionRemoved(indexed address)
+          handler: handleCollectionRemoval
+        - event: CollectionUpdated(indexed address,address,uint256)
+          handler: handleCollectionUpdate
+        - event: CollectionVerificationStatus(indexed address,uint8,string)
+          handler: handleCollectionVerification
+        - event: ItemDelisted(indexed address,uint256)
+          handler: handleItemDelisted
+        - event: ItemListed(indexed address,indexed address,uint256,uint256)
+          handler: handleItemListed
+        - event: ItemSold(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleItemSold
+        - event: ItemUpdated(indexed address,indexed address,uint256,uint256)
+          handler: handleItemUpdated
+        - event: RevenueWithdrawn(indexed address,uint256)
+          handler: handleRevenueWithdrawn
+        - event: TradeFeeUpdated(uint256)
+          handler: handleFeeUpdate
+        - event: ProtocolCreated(indexed address,string,uint8,uint8)
+          handler: handleProtocolCreation
+      file: ./src/contracts/marketplace.ts
+  - kind: ethereum
     name: IERC721
     network: mumbai
     source:
       abi: IERC721
-      startBlock: 28217454
+      startBlock: 35793319
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
         - transfer
@@ -28,30 +75,161 @@ dataSources:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
       file: ./src/eip721/index.ts
-    #### Marketplace Contracts ####
   - kind: ethereum
-    name: Contract
+    name: Offers
     network: mumbai
     source:
-      address: "0x910c38b0804C3f7ffa7B604dB95540121A9C8BeC"
-      abi: Contract
-      startBlock: 28217454
+      address: "0x183ca8df9e283e0eb5bb18d9086be04dd8001e80"
+      abi: Offers
+      startBlock: 35793319
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - collection
-        - token
-        - sale
+        - collectionOffer
+        - collectionTokenOffer
       abis:
-        - name: Contract
-          file: ./abis/Contract.json
-        - name: ERC20
-          file: ./node_modules/@openzeppelin/contracts/build/contracts/ERC20.json
+        - name: Offers
+          file: ./abis/Offers.json
+        - name: IERC721
+          file: ./node_modules/@openzeppelin/contracts/build/contracts/IERC721.json
+        - name: IERC721Metadata
+          file: ./node_modules/@openzeppelin/contracts/build/contracts/IERC721Metadata.json
+        - name: Contract721
+          file: ./abis/Contract721.json
       eventHandlers:
-        - event: ItemSold(indexed address,indexed address,indexed uint32,uint256)
-          handler: handleItemSale
-        - event: ItemListed(indexed address,indexed uint32,indexed uint256)
-          handler: handleNewListing
-      file: ./src/marketplaces/mARTMapping.ts
+        - event: CollectionOfferAccepted(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleCollectionOfferAccepted
+        - event: CollectionOfferCreated(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleCollectionOfferCreated
+        - event: CollectionOfferDeleted(indexed address,indexed address,uint256)
+          handler: handleCollectionOfferDeleted
+        - event: TokenOfferAccepted(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTokenOfferAccepted
+        - event: TokenOfferCancelled(indexed address,indexed address,uint256)
+          handler: handleTokenOfferCancelled
+        - event: TokenOfferCreated(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleTokenOfferCreated
+        - event: TokenOfferUpdated(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleTokenOfferUpdated
+      file: ./src/contracts/offers.ts
+  - kind: ethereum
+    name: Auction
+    network: mumbai
+    source:
+      address: "0xd303d18f6ad3fb82010b238481887ab3efce79f4"
+      abi: Auction
+      startBlock: 35793319
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - auctionBid
+      abis:
+        - name: Auction
+          file: ./abis/Auction.json
+      eventHandlers:
+        - event: AuctionCancelled(indexed address,uint256)
+          handler: handleAuctionCancelled
+        - event: AuctionStarted(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleAuctionStarted
+        - event: BidAccepted(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleBidAccepted
+        - event: BidCreated(indexed address,indexed address,uint256,uint256)
+          handler: handleBidCreated
+      file: ./src/contracts/auction.ts
+  - kind: ethereum
+    name: TokenLocker
+    network: mumbai
+    source:
+      address: "0xf07d62d2ae1264e9ac587aa6b40fb4650effc191"
+      abi: TokenLocker
+      startBlock: 35661090
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - lockId
+      abis:
+        - name: TokenLocker
+          file: ./abis/TokenLocker.json
+      eventHandlers:
+        - event: Deposit(indexed bytes32,indexed address,indexed address,address,uint256[],uint256)
+          handler: handleDeposit
+        - event: Liquidate(bytes32,address)
+          handler: handleLiquidation
+        - event: Withdraw(indexed bytes32)
+          handler: handleWithdrawal
+      file: ./src/contracts/tokenlocker.ts
+  - kind: ethereum
+    name: P2PLending
+    network: mumbai
+    source:
+      address: "0x6ea22ef2910b73fe64dbb8166892d20bc26eecbb"
+      abi: P2PLending
+      startBlock: 35661090
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - loanContract
+        - loanBid
+      abis:
+        - name: P2PLending
+          file: ./abis/P2PLending.json
+      eventHandlers:
+        - event: BidClosed(indexed bytes32,indexed address)
+          handler: handleCancelledBid
+        - event: BidOpened(indexed bytes32,indexed address,uint16)
+          handler: handleNewBid
+        - event: ContractActive(indexed bytes32,indexed address,uint16,uint256,uint256)
+          handler: handleContractActive
+        - event: ContractClosed(indexed bytes32)
+          handler: handleContractClosed
+        - event: ContractOpened(indexed bytes32,indexed address,indexed bytes32,uint256,uint16,uint256)
+          handler: handleContractOpened
+        - event: Liquidate(indexed bytes32)
+          handler: handleLiquidation
+        - event: LoanRepaid(indexed bytes32,uint256)
+          handler: handleLoansRepaid
+        - event: LostBid(indexed bytes32,indexed address,uint256)
+          handler: handleLostBid
+        - event: UpdateProtocolFees(uint16,uint16)
+          handler: handleProtocolFeeUpdate
+        - event: UpdateProtocolBorrowParameters(uint16,uint256)
+          handler: handleProtocolBorrowParameters
+        - event: UpdateProtocolDateParameters(uint8,uint8)
+          handler: handleProtocolDateParameters
+      file: ./src/contracts/p2plending.ts
+templates:
+  - name: CollectionMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/metamapping.ts
+      handler: handleCollectionData
+      entities:
+        - CollectionMetadata
+      abis:
+        - name: Contract721
+          file: ./abis/Contract721.json
+  - name: TokenMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/metamapping.ts
+      handler: handleMetadata
+      entities:
+        - TokenMetadata
+        - TokenAttribute
+      abis:
+        - name: Contract721
+          file: ./abis/Contract721.json
+features:
+  - fullTextSearch

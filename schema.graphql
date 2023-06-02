@@ -1,6 +1,232 @@
+enum SaleType {
+  FIXEDSALE
+  AUCTIONSALE
+  NONE
+}
+enum LoanStatus {
+  PENDING
+  ACTIVE
+  CLOSED
+  LIQUIDATED
+  LOAN_REPAID
+}
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+enum LockStatus {
+  ACTIVE
+  LIQUIDATED
+  UNLOCKED
+}
+enum TransactionType{
+  FIXED_SALE_LISTING
+  FIXED_SALE_SOLD
+  FIXED_SALE_CANCELLED
+  FIXED_SALE_UPDATED
+  AUCTION_SALE_LISTING
+  AUCTION_SALE_CANCELLED
+  AUCTION_BID_CREATED
+  AUCTION_BID_ACCEPTED
+  LOAN_REQUEST_OPEN
+  LOAN_REQUEST_CANCELLED
+  LOAN_REQUEST_ACTIVE
+  LOAN_REQUEST_BID_OPEN
+  LOAN_REQUEST_BID_CANCELLED
+  LOAN_REQUEST_BID_LOST
+  LOAN_LIQUIDATED
+  LOAN_REPAID
+}
+
+type supportedCollection @entity {
+  " the ID is supportedcollection and collection address "
+  id: ID!
+
+  " Collection fee revenue collector "
+  creator: Bytes!
+
+  " The trading fee for the collection "
+  royaltyFees: BigInt!
+
+  " The collection images "
+  metadata: CollectionMetadata
+
+  " The collection address "
+  collection: collection!
+}
+
+type CollectionMetadata @entity {
+  " The ID is the ipfs hash "
+  id: ID!
+
+  " The collection banner image "
+  bannerImage: String!
+
+  " The collection description "
+  description: String!
+
+  " The collection placeholder Image "
+  placeholderImage: String!
+
+  " The collection small image "
+  smallImage: String!
+
+  " The collection twitter link "
+  twitter: String
+
+  " The collection discord link "
+  discord: String
+
+  " The collection telegram link "
+  telegram: String
+
+  " The collection website link "
+  website: String
+}
+
+type saleInfo @entity {
+  " The ID is the concatenation of the saleinfo, collection address, and token ID "
+  id: ID!
+
+  " The collection address for the sale "
+  collection: collection!
+
+  " The token ID involved in the sale "
+  token: token!
+
+  " The seller of the token "
+  seller: account!
+
+  " The price of the token "
+  salePrice: BigInt
+
+  " The state of the sale; fixedSale, auctionSale and none "
+  state: SaleType!
+
+  " The starting bid for the auction if sale is an auction "
+  startingBid: BigInt
+
+  " The highest bid and current for the auction "
+  highestBid: BigInt
+
+  " The highest bidder for the auction "
+  highestBidder: account
+
+  " The time the auction ends "
+  validity: BigInt
+
+  " The transaction hash for the sale "
+  transaction: transaction!
+
+  " An array of bid entities "
+  auctionBids: [auctionBid!]
+}
+
+type auctionBid @entity {
+  " The id is the collection address, token ID and its bidder "
+  id: ID!
+
+  " The bidder "
+  bidder: account!
+
+  " The bid value "
+  bid: BigInt!
+}
+
+type collectionOffer @entity {
+  " ID is the concatenation of collection address and the offer creator "
+  id: ID!
+
+  " The collection address for the offer "
+  collection: collection!
+
+  " The offer creator "
+  creator: account!
+
+  " The offer amount or value "
+  amount: BigInt!
+
+  " The total count of nfts the Offer creator is offering to buy "
+  total: Int!
+
+  " The validity period of the offer "
+  validity: BigInt!
+
+  " The transaction for the offer "
+  transaction: transaction!
+}
+
+type collectionTokenOffer @entity {
+  " ID is the concatenation of collection, creator address and tokenId "
+  id: ID!
+
+  " The collection address for the offer "
+  collection: collection!
+
+  " The offer creator "
+  creator: account!
+
+  " The token ID involved in the offer "
+  token: token!
+
+  " The offer amount/value "
+  value: BigInt!
+
+  " The validity period of the offer "
+  validity: BigInt!
+
+  " The transaction for the offer "
+  transaction: transaction!
+}
+
 type contract @entity {
   id: ID!
   asERC721: collection
+}
+
+type accountRevenue @entity {
+  " account address "
+  id: Bytes!
+
+  " withdrawable bids from failed bids "
+  withdrawableBid: BigInt!
+  
+  " account pointer "
+  account: account!
+}
+
+type accountStatistics @entity {
+  " account address "
+  id: Bytes!
+
+  " The points earned by this account "
+  points: Int!
+
+  " The total volume of sales for this account "
+  salesVolume: BigInt!
+
+  " The total sales for this account "
+  totalSales: Int!
+
+  " total interest paid as a borrower "
+  paidInterest: BigInt!
+
+  " total interest earned as a lender "
+  earnedInterest: BigInt!
+
+  " total loans taken as a borrower "
+  loansCount: Int!
+
+  " total loans funded as a lender "
+  loansFunded: Int!
+
+  " total loans defaulted on as a borrower "
+  defaultCount: Int!
+  
+  " account pointer "
+  account: account!
 }
 
 type account @entity {
@@ -11,16 +237,45 @@ type account @entity {
   tokens: [token!]! @derivedFrom(field: "owner")
 
   " The transfers originating from this account "
-  transfersFrom: [transfer!]! @derivedFrom(field: "senderAddress")
+  transfersFrom: [transfer!] @derivedFrom(field: "senderAddress")
 
   " The transfers recevied by this account"
-  transfersTo: [transfer!]! @derivedFrom(field: "receiverAddress")
+  transfersTo: [transfer!] @derivedFrom(field: "receiverAddress")
 
   " M:M relationship for Accounts and Collections "
-  accountCollection: [accountCollection!]! @derivedFrom(field: "account")
+  accountCollection: [accountCollection!] @derivedFrom(field: "account")
+
+  " Tokens on sale for account"
+  saleInfo: [saleInfo!] @derivedFrom(field: "seller")
+
+  " Tokens bidded by account"
+  auctionBids: [saleInfo!] @derivedFrom(field: "highestBidder")
+
+  " Collection offers made by account "
+  collectionOffers: [collectionOffer!] @derivedFrom(field: "creator")
+
+  " Token offer made for by account "
+  tokenCollectionOffers: [collectionTokenOffer!] @derivedFrom(field: "creator")
+
+  " locked nfts "
+  lockedIds: [lockId!] @derivedFrom(field: "depositor")
+
+  " loan contract bids "
+  loanBids: [loanBid!] @derivedFrom(field: "bidder")
+
+  " loanContract as a borrower "
+  borrows: [loanContract!] @derivedFrom(field: "borrower")
+
+  " loanContract as a lender "
+  lends: [loanContract!] @derivedFrom(field: "lender")
+  
+  " account revenue "
+  accountRevenue: accountRevenue @derivedFrom(field: "account")
+  
+  " account statistics "
+  accountStatistics: accountStatistics @derivedFrom(field: "account")
 }
 
-"replaces TokenRegistry"
 type collection @entity {
   " The address of the collection "
   id: ID!
@@ -34,11 +289,22 @@ type collection @entity {
   " Total Supply of Tokens "
   totalSupply: BigInt
 
+  " Total Value locked for offers "
+  valueLocked: BigInt!
+
   " Mint Price "
   mintPrice: BigDecimal
+  
+  " Collection creator "
+  creator: account
 
   " Tokens for the collection"
   tokens: [token!]! @derivedFrom(field: "collection")
+
+  " Tokens in the collection for sale"
+  saleInfo: [saleInfo!] @derivedFrom(field: "collection")
+
+  collectionOffers: [collectionOffer!] @derivedFrom(field: "collection")
 
   " Collection supports metadata "
   supportsMetadata: Boolean
@@ -66,26 +332,98 @@ type collection @entity {
 
   " M:M relationship for Accounts and Collections "
   accountCollection: [accountCollection!]! @derivedFrom(field: "collection")
+
+  " Collection loan statistics "
+  loanStatistics: collectionLoanStatistics @derivedFrom(field: "collection")
+
+  " count of tokens locked for the collection gotten by counting lockedTokens array length "
+  lockedTokens: Int!
+}
+
+type collectionLoanStatistics @entity {
+  " Collection address as id "
+  id: Bytes!
+
+  " Average loan size: division of all loans taken from this collection "
+  averageLoanAmount: BigInt!
+
+  " total loan amount taken in this collection "
+  totalLoanVolume: BigInt!
+
+  " total loans taken in this collection "
+  totalLoanCount: Int!
+
+  " average apr paid for in this collection "
+  averageApr: Int!
+
+  " largest single loan taken for the collection "
+  largestLoan: BigInt!
+
+  " the collection pointer for this statistics "
+  collection: collection!
 }
 
 type token @entity {
-  " Ethereum / Collection Addrress - Token Id "
+  " kcc / Collection Addrress - Token Id "
   id: ID!
 
   " The collection address "
   collection: collection!
 
-  " The id of the NFT"
-  identifier: BigInt!
-
   " The token URI "
-  tokenURI: String
+  tokenURI: String!
+  
+  " The token metadata "
+  metadata: TokenMetadata
 
-  " The address the currently owns the token "
+  " Used to track last fetched time for token metadata "
+  updatedAtTimestamp: BigInt!
+
+  " Token ID / identifier but as a string for fullTextSearch "
+  tokenId: String!
+
+  " The address that currently owns the token "
   owner: account
 
   " Transfers involving this token "
   transfers: [transfer!]! @derivedFrom(field: "token")
+
+  " token saleInfo "
+  saleInfo: saleInfo @derivedFrom(field: "token")
+
+  " offers made for this token "
+  tokenOffers: [collectionTokenOffer!] @derivedFrom(field: "token")
+}
+
+type TokenMetadata @entity {
+  " metadata hash "
+  id: ID!
+
+  " The image of the NFT"
+  image: String
+
+  " The name of the NFT"
+  name: String
+
+  " The description of the NFT"
+  description: String
+
+  " The token attributes "
+  attributes: [TokenAttribute!] @derivedFrom(field: "metadata")
+}
+
+type TokenAttribute @entity {
+  " the metadata for token "
+  id: ID!
+
+  " the metadata for token "
+  metadata: TokenMetadata!
+
+  " The attribute trait type "
+  traitType: String
+
+  " The attribute value "
+  value: String
 }
 
 type accountCollection @entity {
@@ -127,8 +465,8 @@ type transaction @entity {
   " Gas Spent "
   gasPrice: BigInt
 
-  " listedNft events that occured within the transaction "
-  listedNfts: [listedNft!] @derivedFrom(field: "transaction")
+  " transaction type to reference "
+  txType: TransactionType!
 }
 
 type transfer @entity {
@@ -156,7 +494,7 @@ type transfer @entity {
   " Block Number "
   blockNumber: Int!
 
-  " The amount of ETH/DAZ paid"
+  " The amount of KCS/WKCS paid"
   amount: BigDecimal!
 
   " matched sale event for the transfer "
@@ -170,31 +508,8 @@ type sale @entity {
   " tx that the sale occured in "
   transaction: transaction!
 
-  " the currency that the sale occred in "
-  currency: currency
-
-  " Timestamp for block "
-  timestamp: Int!
-
-  " Block Number "
-  blockNumber: Int!
-
   " the amount of the sale "
   amount: BigDecimal!
-
-  " The marketplace "
-  platform: String
-}
-
-type currency @entity {
-  " Currency Address "
-  id: ID!
-
-  decimals: Int
-
-  name: String!
-
-  symbol: String!
 }
 
 type hourlyCollectionSnapshot @entity {
@@ -275,30 +590,135 @@ type weeklyCollectionSnapshot @entity {
   bottomSale: BigDecimal!
 }
 
-type wethTransaction @entity {
-  " Hash for weth contained transaction "
-  id: ID!
+type protocol @entity {
+  " The protocol contract address "
+  id: Bytes!
+
+  " The protocol name "
+  name: String!
+
+  " The tokens locked by this protocol "
+  lockedIds: [lockId!] @derivedFrom(field: "protocol")
+
+  " The protocol fee "
+  protocolFee: Int!
+
+  " The security fee "
+  securityFee: Int!
+
+  " total borrows "
+  totalLoanVolume: BigInt!
+
+  " total loan count "
+  totalLoanCount: Int!
+
+  " interest paid by borrowers "
+  totalPaidInterest: BigInt!
+  
+  " Average loan size: division of all loans taken from the protocol "
+  averageLoanAmount: BigInt!
+  
+  " largest single loan taken in the protocol "
+  largestLoan: BigInt!
 }
 
-type listedNft @entity {
-  " The transaction hash - The event id "
+type lockId @entity {
+  " The lock id in string "
   id: ID!
 
-  " The price of the NFT "
-  price: BigDecimal!
+  " The collection from which the tokens are locked "
+  collection: collection!
 
-  " The currency of the NFT "
-  currency: currency
+  " An array of token entity of this collection that was locked "
+  tokens: [token!]!
 
-  " The marketplace "
-  platform: String
+  " The address that locked the collections "
+  depositor: account!
 
-  " The timestamp of the listing "
-  timestamp: Int!
+  " The protocol that locked the collections "
+  protocol: protocol!
 
-  " The block number of the listing "
-  blockNumber: Int!
+  " The timestamp of when the lock expires "
+  expires: BigInt!
+
+  " the contract it was opened for "
+  contract: loanContract
+
+  " the lock status "
+  status: LockStatus!
+
+  " Transaction hash in which the deposit event occured"
+  transaction: transaction!
+}
+
+type loanContract @entity {
+  " the loanContract id in bytes"
+  id: ID!
+
+  " The borrower address "
+  borrower: account!
+
+  " The lender address "
+  lender: account
+
+  " The interest/apr to be paid "
+  interest: Int!
+
+  " The amount borrowed "
+  amount: BigInt!
+
+  " The loan expiry date. changes from days count to unix period when active "
+  expiry: BigInt!
+
+  " The start block of the loan "
+  checkPointBlock: BigInt
+
+  " state of the loan "
+  status: LoanStatus!
+
+  " the lockId of the tokens locked for the loan "
+  lockId: lockId! @derivedFrom(field: "contract")
+
+  " Bids made to this loan contract "
+  bids: [loanBid!] @derivedFrom(field: "contract")
+
+  " Transaction hash in which the loanContractFulfilled or cancelled event occured"
+  transaction: transaction!
+}
+
+type loanBid @entity {
+  " the loanContract id - the bidder address "
+  id: ID!
+
+  " bidder address "
+  bidder: account!
+
+  " proposed interest "
+  proposedInterest: Int!
+
+  " Contract bidding for "
+  contract: loanContract!
 
   " Transaction hash in which the transfer event occured"
   transaction: transaction!
+
+  " the bid status "
+  status: BidStatus!
 }
+
+type _Schema_
+  @fulltext(
+    name: "search"
+    language: en
+    algorithm: rank
+    include: [
+      { entity: "token", fields: [{ name: "tokenId" }] }
+      { entity: "account", fields: [{ name: "id" }] }
+      {
+        entity: "collection"
+        fields: [{ name: "id", name: "name", name: "symbol" }]
+      }
+      { entity: "TokenMetadata", fields: [{ name: "name" }] }
+      { entity: "TokenAttribute", fields: [{ name: "traitType", name: "value" }] }
+    ]
+  )

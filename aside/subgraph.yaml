@@ -1,0 +1,135 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: IERC721
+    network: mumbai
+    source:
+      abi: IERC721
+      startBlock: 35661090
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - transfer
+        - transaction
+        - account
+      abis:
+        - name: IERC721
+          file: ./node_modules/@openzeppelin/contracts/build/contracts/IERC721.json
+        - name: IERC721Metadata
+          file: ./node_modules/@openzeppelin/contracts/build/contracts/IERC721Metadata.json
+        - name: Contract721
+          file: ./abis/Contract721.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/eip721/index.ts
+  - kind: ethereum
+    name: MainContract
+    network: mumbai
+    source:
+      address: "0x6594ff275aa441304e039450f1fdbb30d1d9df33"
+      abi: Main
+      startBlock: 35661090
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - SupportedCollection
+        - protocol
+      abis:
+        - name: Main
+          file: ./abis/Main.json
+      eventHandlers:
+        - event: CollectionAdded(indexed address)
+          handler: handleCollectionAddition
+        - event: CollectionRemoved(indexed address)
+          handler: handleCollectionRemoval
+        - event: ProtocolCreated(indexed address,string,uint8,uint8)
+          handler: handleProtocolCreation
+      file: ./src/contracts/main.ts
+  - kind: ethereum
+    name: TokenLocker
+    network: mumbai
+    source:
+      address: "0xf07d62d2ae1264e9ac587aa6b40fb4650effc191"
+      abi: TokenLocker
+      startBlock: 35661090
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - lockId
+      abis:
+        - name: TokenLocker
+          file: ./abis/TokenLocker.json
+      eventHandlers:
+        - event: Deposit(indexed bytes32,indexed address,indexed address,address,uint256[],uint256)
+          handler: handleDeposit
+        - event: Liquidate(bytes32,address)
+          handler: handleLiquidation
+        - event: Withdraw(indexed bytes32)
+          handler: handleWithdrawal
+      file: ./src/contracts/tokenlocker.ts
+  - kind: ethereum
+    name: P2PLending
+    network: mumbai
+    source:
+      address: "0x6ea22ef2910b73fe64dbb8166892d20bc26eecbb"
+      abi: P2PLending
+      startBlock: 35661090
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - loanContract
+        - bid
+      abis:
+        - name: P2PLending
+          file: ./abis/P2PLending.json
+      eventHandlers:
+        - event: BidClosed(indexed bytes32,indexed address)
+          handler: handleCancelledBid
+        - event: BidOpened(indexed bytes32,indexed address,uint16)
+          handler: handleNewBid
+        - event: ContractActive(indexed bytes32,indexed address,uint16,uint256,uint256)
+          handler: handleContractActive
+        - event: ContractClosed(indexed bytes32)
+          handler: handleContractClosed
+        - event: ContractOpened(indexed bytes32,indexed address,indexed bytes32,uint256,uint16,uint256)
+          handler: handleContractOpened
+        - event: Liquidate(indexed bytes32)
+          handler: handleLiquidation
+        - event: LoanRepaid(indexed bytes32,uint256)
+          handler: handleLoansRepaid
+        - event: LostBid(indexed bytes32,indexed address,uint256)
+          handler: handleLostBid
+        - event: UpdateProtocolFees(uint16,uint16)
+          handler: handleProtocolFeeUpdate
+        - event: UpdateProtocolBorrowParameters(uint16,uint256)
+          handler: handleProtocolBorrowParameters
+        - event: UpdateProtocolDateParameters(uint8,uint8)
+          handler: handleProtocolDateParameters
+      file: ./src/contracts/p2plending.ts
+templates:
+  - name: TokenMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/metamapping.ts
+      handler: handleMetadata
+      entities:
+        - TokenMetadata
+        - TokenAttribute
+      abis:
+        - name: Contract721
+          file: ./abis/Contract721.json
+features:
+  - fullTextSearch
