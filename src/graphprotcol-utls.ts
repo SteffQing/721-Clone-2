@@ -23,12 +23,12 @@ export namespace constants {
   export const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
   export const BYTES32_ZERO =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
-  export const Marketplace = "0x9f98322108648d7479d0ad85edb3cf193964dadb";
-  export const OfferHouse = "0x183ca8df9e283e0eb5bb18d9086be04dd8001e80";
-  export const Auction = "0xd303d18f6ad3fb82010b238481887ab3efce79f4";
+  export const Marketplace = "0xCbbDAdfdd3c19ce2183756D405F1Db2431C175c4";
+  export const OfferHouse = "0x02847B9F9718803c9a057782E86037F5EdA359B7";
+  export const Auction = "0x1D3001A0CdCb933bB5c04481773929c2c9Ffb4d1";
   export const WKCS = "0xd7f7c6465940cb246b43f4a09936b76a1e7e4409";
-  export const TokenLocker = "0xf07d62d2ae1264e9ac587aa6b40fb4650effc191";
-  export const P2P = "0x6ea22ef2910b73fe64dbb8166892d20bc26eecbb";
+  export const TokenLocker = "0x7E2f9e264147883c397eB59e90Ad0947545387D9";
+  export const P2P = "0x0214288D0B805e5eB1F67c4e2E5536f405198238";
   export const Collections = ["0x7257141509fed979fa2e97c7de475ab708eeda34"];
 }
 
