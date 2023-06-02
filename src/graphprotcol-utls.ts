@@ -29,7 +29,7 @@ export namespace constants {
   export const WKCS = "0xd7f7c6465940cb246b43f4a09936b76a1e7e4409";
   export const TokenLocker = "0x7E2f9e264147883c397eB59e90Ad0947545387D9";
   export const P2P = "0x0214288D0B805e5eB1F67c4e2E5536f405198238";
-  export const Collections = ["0x7257141509fed979fa2e97c7de475ab708eeda34", "0x9b43b2fc977690bf148bb9217e5a6dbc2c3d7419"];
+  export const Collections = ["0x7257141509fed979fa2e97c7de475ab708eeda34", "0x9b43b2fc977690bf148bb9217e5a6dbc2c3d7419", "0x81D028A07Fd843C549b9C634cb9E99419c42a0Ee", "0xBE3bbf00ce1b8F27CA21821B15CBe39d816416B0", "0x02f0A9f1e8C1B58107D1c8740d49Ad2999A45c67", "0xC175E2B0C7ef81612df5Eb45b1d64DbE9C527803"];
 }
 
 export namespace transactions {
