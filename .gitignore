@@ -1,2 +1,4 @@
 @openzeppelin
 node_modules
+generated
+build

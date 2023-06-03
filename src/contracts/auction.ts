@@ -8,7 +8,7 @@ import {
 import { auctionBid, saleInfo } from "../../generated/schema";
 import { fetchAccount, fetchAccountStatistics } from "../utils/erc721";
 import { updateAuction } from "./utils";
-import { transactions } from "../graphprotcol-utls";
+import { updateTxType } from "./marketplace";
 
 export function handleAuctionCancelled(event: AuctionCancelledEvent): void {
   let collectionAddress = event.params.collection.toHex();
@@ -19,6 +19,7 @@ export function handleAuctionCancelled(event: AuctionCancelledEvent): void {
     .concat(tokenId);
   let entity = saleInfo.load(tokenEntityId);
   if (entity != null) {
+    updateTxType(event, "AUCTION_SALE_CANCELLED")
     store.remove("saleInfo", entity.id);
   }
 }
@@ -37,8 +38,7 @@ export function handleAuctionStarted(event: AuctionStartedEvent): void {
   entity.state = "AUCTIONSALE";
   entity.startingBid = event.params.startingBid;
   entity.validity = event.params.endAuctionTime;
-
-  entity.transaction = transactions.log(event).id;
+  entity.transaction = updateTxType(event, "AUCTION_SALE_LISTING")
 
   entity.save();
 }
@@ -55,13 +55,16 @@ export function handleBidAccepted(event: BidAcceptedEvent): void {
     fetchAccount(event.params.seller).id
   );
   sellerEntity.points = sellerEntity.points + 10;
+  sellerEntity.totalSales = sellerEntity.totalSales + 1
   sellerEntity.save();
 
   let bidderEntity = fetchAccountStatistics(
     fetchAccount(event.params.buyer).id
   );
   bidderEntity.points = bidderEntity.points + 20;
+  bidderEntity.salesVolume = bidderEntity.salesVolume.plus(event.params.amount)
   bidderEntity.save();
+  updateTxType(event, "AUCTION_BID_ACCEPTED")
 
   store.remove("saleInfo", tokenEntityId);
 }
@@ -95,6 +98,7 @@ export function handleBidCreated(event: BidCreatedEvent): void {
     }
     bids.push(bidEntityId);
     entity.auctionBids = bids;
+    updateTxType(event, "AUCTION_BID_CREATED")
 
     entity.save();
   }

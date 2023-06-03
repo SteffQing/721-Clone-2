@@ -1,4 +1,4 @@
-import { BigDecimal, log } from "@graphprotocol/graph-ts";
+import { BigDecimal } from "@graphprotocol/graph-ts";
 import { constants } from "../graphprotcol-utls";
 
 import {

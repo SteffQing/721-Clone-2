@@ -1,17 +1,18 @@
-import { BigInt, log } from "@graphprotocol/graph-ts";
+import { BigInt } from "@graphprotocol/graph-ts";
 import {
   Deposit as DepositEvent,
   Withdraw as WithdrawEvent,
   Liquidate as LiquidateEvent,
 } from "../../generated/TokenLocker/TokenLocker";
 import { lockId } from "../../generated/schema";
-import { transactions } from "../graphprotcol-utls";
+import { fetchAccount, fetchRegistry } from "../utils/erc721";
+import { updateTxType } from "./marketplace";
 
 export function handleDeposit(event: DepositEvent): void {
   let entity = new lockId(event.params.lockId.toHexString());
-  entity.depositor = event.params.user;
+  entity.depositor = fetchAccount(event.params.user).id;
   entity.protocol = event.params.protocol;
-  entity.collection = event.params.collection;
+  entity.collection = fetchRegistry(event.params.collection).id;
   entity.expires = event.params.lockPeriod;
   entity.status = "ACTIVE";
   let _lockedTokens = loopCollection(
@@ -19,7 +20,7 @@ export function handleDeposit(event: DepositEvent): void {
     event.params.tokens
   );
   entity.tokens = _lockedTokens;
-  entity.transaction = transactions.log(event).id;
+  entity.transaction = updateTxType(event, "TOKENS_LOCKED");
   entity.save();
 }
 
@@ -28,7 +29,7 @@ export function loopCollection(collection: string, tokens: BigInt[]): string[] {
   let tokensArray: string[] = [];
   for (let j = 0; j < collectionTokens; j++) {
     let token = tokens[j];
-    let tokenEntityId = `eth/${collection}/${token}`;
+    let tokenEntityId = `kcc/${collection}/${token}`;
     tokensArray.push(tokenEntityId);
   }
   return tokensArray;
@@ -46,7 +47,7 @@ export function handleLiquidation(event: LiquidateEvent): void {
   let entity = lockId.load(event.params.lockId.toHexString());
   if (entity) {
     entity.status = "LIQUIDATED";
-    entity.depositor = event.params.recipient;
+    entity.depositor = fetchAccount(event.params.recipient).id;
     entity.save();
   }
 }

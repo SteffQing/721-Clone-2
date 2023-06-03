@@ -1,4 +1,4 @@
-import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
 
 import { IERC721Metadata } from "../../generated/IERC721/IERC721Metadata";
 
@@ -13,6 +13,8 @@ import {
 } from "../../generated/schema";
 
 import { supportsInterface } from "./erc165";
+
+import { TokenMetadata as TokenMetadataTemplate } from "../../generated/templates";
 
 import { constants } from "../graphprotcol-utls";
 
@@ -42,6 +44,7 @@ export function fetchRegistry(address: Address): collection {
     let try_name = erc721.try_name();
     let try_symbol = erc721.try_symbol();
     let try_mintPrice = Collection.try_price();
+    let try_owner = Collection.try_owner();
     let mintPriceBigInt = try_mintPrice.reverted
       ? BigInt.fromI32(0)
       : try_mintPrice.value;
@@ -52,11 +55,13 @@ export function fetchRegistry(address: Address): collection {
     collectionEntity.name = try_name.reverted ? "" : try_name.value;
     collectionEntity.symbol = try_symbol.reverted ? "" : try_symbol.value;
     collectionEntity.mintPrice = mintPrice;
+    collectionEntity.creator = try_owner.reverted ? null : fetchAccount(try_owner.value).id;
     collectionEntity.supportsMetadata = supportsInterface(erc721, "5b5e139f"); // ERC721Metadata
     collectionEntity.totalSales = 0;
     collectionEntity.totalVolume = constants.BIGDECIMAL_ZERO;
     collectionEntity.topSale = constants.BIGDECIMAL_ZERO;
     collectionEntity.valueLocked = constants.BIGINT_ZERO;
+    collectionEntity.lockedTokens = 0;
 
     collectionEntity.save();
   }
@@ -68,7 +73,11 @@ export function fetchToken(
   id: BigInt,
   timestamp: BigInt
 ): token {
-  let tokenid = "kcc/".concat(collection.id.concat("/").concat(id.toString()));
+  let tokenid = "kcc/".concat(
+    collection.id
+      .concat("/")
+      .concat(id.toString())
+  );
   let tokenEntity = token.load(tokenid);
   let timeout = BigInt.fromI32(2592000);
   let lastUpdate = tokenEntity
@@ -83,21 +92,27 @@ export function fetchToken(
     tokenEntity.tokenId = id.toString();
 
     //update collection's total supply
-    let Collection = Contract721.bind(Address.fromString(collection.id));
+    let Collection = Contract721.bind(Address.fromHexString(collection.id));
     let try_totalSupply = Collection.try_totalSupply();
     let tokenURI = Collection.try_tokenURI(id);
-    let owner = Collection.try_ownerOf(id);
 
     tokenEntity.tokenURI = tokenURI.reverted ? "" : tokenURI.value;
     tokenEntity.updatedAtTimestamp = timestamp;
-    tokenEntity.owner = owner.reverted
-      ? account_zero.id
-      : fetchAccount(owner.value).id;
     collection.totalSupply = try_totalSupply.reverted
       ? BigInt.fromI32(0)
       : try_totalSupply.value;
-    collection.save();
-    tokenEntity.save();
+    let isCollectionSupported = constants.Collections.includes(
+      collection.id
+    );
+    if (isCollectionSupported && tokenURI.reverted == false) {
+      const tokenIpfsHash = tokenURI.value;
+      let ipfsHash = checkUri(tokenIpfsHash);
+      if (ipfsHash.length > 0) {
+        let metaDataHash = ipfsHash + "/" + id.toString() + ".json";
+        tokenEntity.metadata = metaDataHash;
+        TokenMetadataTemplate.create(metaDataHash);
+      }
+    }
   }
   return tokenEntity as token;
 }
@@ -115,14 +130,40 @@ export function fetchAccount(address: Address): account {
 }
 
 export function fetchAccountStatistics(address: string): accountStatistics {
-  let accountEntity = accountStatistics.load(address);
+  let addressBytes = Bytes.fromHexString(address)
+  let accountEntity = accountStatistics.load(addressBytes);
   if (accountEntity == null) {
-    accountEntity = new accountStatistics(address);
+    accountEntity = new accountStatistics(addressBytes);
     accountEntity.points = 0;
-    accountEntity.totalVolume = constants.BIGINT_ZERO;
-    accountEntity.revenue = constants.BIGINT_ZERO;
+    accountEntity.salesVolume = constants.BIGINT_ZERO;
     accountEntity.totalSales = 0;
+    accountEntity.paidInterest = constants.BIGINT_ZERO;
+    accountEntity.earnedInterest = constants.BIGINT_ZERO;
+    accountEntity.loansCount = 0;
+    accountEntity.loansFunded = 0;
+    accountEntity.defaultCount = 0;
+    accountEntity.withdrawableBid = constants.BIGINT_ZERO
+    accountEntity.revenue = constants.BIGINT_ZERO;
+    accountEntity.account = fetchAccount(addressBytes).id
     accountEntity.save();
   }
   return accountEntity;
+}
+
+function checkUri(url: string): string {
+  let ipfsHash: string;
+  if (url.length >= 46) {
+    if (url.includes("Qm")) {
+      let startingIndex = url.indexOf("Qm");
+      ipfsHash = url.substring(startingIndex, startingIndex + 46);
+    } else if (url.includes("bafy")) {
+      let startingIndex = url.indexOf("bafy");
+      ipfsHash = url.substring(startingIndex, startingIndex + 59);
+    } else {
+      ipfsHash = "";
+    }
+  } else {
+    ipfsHash = "";
+  }
+  return ipfsHash;
 }

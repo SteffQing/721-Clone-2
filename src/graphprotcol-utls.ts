@@ -1,8 +1,4 @@
-import { Bytes } from "@graphprotocol/graph-ts";
-import { Address } from "@graphprotocol/graph-ts";
 import { BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
-
-import { ERC20Abi } from "../generated/WETH/ERC20Abi";
 
 import { transaction } from "../generated/schema";
 

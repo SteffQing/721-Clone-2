@@ -17,7 +17,7 @@ import {
   collection,
 } from "../../generated/schema";
 import { CollectionMetadata as CollectionDataTemplate } from "../../generated/templates";
-import { store, BigInt, Address } from "@graphprotocol/graph-ts";
+import { store, BigInt, Address, ethereum } from "@graphprotocol/graph-ts";
 import {
   fetchAccount,
   fetchAccountStatistics,
@@ -25,7 +25,7 @@ import {
   fetchToken,
 } from "../utils/erc721";
 import { updateSalesData } from "./utils";
-import { transactions } from "../graphprotcol-utls";
+import { constants, transactions } from "../graphprotcol-utls";
 
 export function handleCollectionAdded(event: CollectionAddedEvent): void {
   let collectionEntity = collection.load(event.params.collection.toHex());
@@ -79,6 +79,7 @@ export function handleItemDelisted(event: ItemDelistedEvent): void {
     .concat(tokenId.toString());
   let entity = saleInfo.load(tokenEntityId);
   if (entity != null) {
+    updateTxType(event, "FIXED_SALE_CANCELLED")
     store.remove("saleInfo", entity.id);
   }
 }
@@ -97,7 +98,7 @@ export function handleItemListed(event: ItemListedEvent): void {
   entity.collection = collectionEntity.id;
   entity.seller = fetchAccount(event.params.seller).id;
   entity.salePrice = event.params.price;
-  entity.transaction = transactions.log(event).id;
+  entity.transaction = updateTxType(event, "FIXED_SALE_LISTING")
   entity.state = "FIXEDSALE";
   entity.save();
 }
@@ -118,9 +119,10 @@ export function handleItemSold(event: ItemSoldEvent): void {
   sellerEntity.totalSales = sellerEntity.totalSales + 1;
   sellerEntity.save();
   let buyerEntity = fetchAccountStatistics(fetchAccount(event.params.buyer).id);
-  buyerEntity.totalVolume = buyerEntity.totalVolume.plus(event.params.price);
+  buyerEntity.salesVolume = buyerEntity.salesVolume.plus(event.params.price);
   buyerEntity.points = buyerEntity.points + 20;
   buyerEntity.save();
+  updateTxType(event, "FIXED_SALE_SOLD")
 
   if (entity != null) {
     store.remove("saleInfo", entity.id);
@@ -138,7 +140,7 @@ export function handleItemUpdated(event: ItemUpdatedEvent): void {
   let entity = saleInfo.load(tokenEntity.id);
   if (entity != null) {
     entity.salePrice = event.params.newPrice;
-    entity.transaction = transactions.log(event).id;
+    entity.transaction = updateTxType(event, "FIXED_SALE_UPDATED");
 
     entity.save();
   }
@@ -157,25 +159,35 @@ export function handleProtocolCreation(event: ProtocolCreatedEvent): void {
   entity.name = event.params.name;
   entity.protocolFee = event.params.protocolFee;
   entity.securityFee = event.params.securityFee;
-  entity.totalBorrows = constants.BIGINT_ZERO;
+  entity.totalLoanCount = 0;
+  entity.totalLoanVolume = constants.BIGDECIMAL_ZERO;
+  entity.largestLoan = constants.BIGDECIMAL_ZERO
+  entity.averageLoanAmount = constants.BIGDECIMAL_ZERO
   entity.totalPaidInterest = constants.BIGINT_ZERO;
   entity.save();
 }
 
-export function updateProtocol(
+export function updateProtocolLoanData(
   _protocol: Address,
-  borrow: BigInt,
+  amount: BigInt,
   interest: BigInt
 ): void {
   let entity = protocol.load(_protocol);
   if (entity) {
-    entity.totalBorrows = entity.totalBorrows.plus(borrow);
+    let loanCount = entity.totalLoanCount
+    let loanAmount = amount.toBigDecimal()
+    entity.totalLoanCount = loanCount + 1;
+    entity.totalLoanVolume = entity.totalLoanVolume.plus(loanAmount);
+    if(loanAmount.gt(entity.largestLoan)){
+      entity.largestLoan = loanAmount;
+    }
+    entity.averageLoanAmount = entity.totalLoanVolume.div(BigInt.fromI32(loanCount).toBigDecimal())
     entity.totalPaidInterest = entity.totalPaidInterest.plus(interest);
     entity.save();
   }
 }
 
-export function updateProtocolParameters(
+export function updateProtocolFeeParameters(
   _protocol: Address,
   securityFee: number,
   protocolFee: number
@@ -186,4 +198,11 @@ export function updateProtocolParameters(
     entity.protocolFee = protocolFee as i32;
     entity.save();
   }
+}
+
+export function updateTxType(event: ethereum.Event, txType: string):string{
+  let tx = transactions.log(event)
+  tx.txType = txType
+  tx.save()
+  return tx.id
 }

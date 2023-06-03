@@ -18,6 +18,7 @@ import {
 } from "../utils/erc721";
 import { updateCollectionOffer, updateTokenOffer } from "./utils";
 import { transactions } from "../graphprotcol-utls";
+import { updateTxType } from "./marketplace";
 
 export function handleCollectionOfferAccepted(
   event: CollectionOfferAcceptedEvent
@@ -34,11 +35,13 @@ export function handleCollectionOfferAccepted(
   );
   let creatorEntity = fetchAccountStatistics(fetchAccount(creator).id);
   creatorEntity.points = creatorEntity.points + 20;
+  creatorEntity.salesVolume = creatorEntity.salesVolume.plus(event.params.value)
   creatorEntity.save();
   let sellerEntity = fetchAccountStatistics(
     fetchAccount(event.params.seller).id
   );
   sellerEntity.points = sellerEntity.points + 10;
+  sellerEntity.totalSales = sellerEntity.totalSales + 1
   sellerEntity.save();
 
   if (entity != null) {
@@ -56,6 +59,7 @@ export function handleCollectionOfferAccepted(
     updateCollectionOffer(event);
     entity.amount = entity.amount.minus(event.params.value);
     entity.total = entity.total - 1;
+    updateTxType(event, "COLLECTION_OFFER_ACCEPTED")
     if (entity.total === 0) {
       store.remove("collectionOffer", entity.id);
     } else {
@@ -79,12 +83,12 @@ export function handleCollectionOfferCreated(
   );
   collectionEntity.save();
 
-  entity.creator = creatorEntity.id;
+  entity.creator = creatorEntity.id.toHexString();
   entity.collection = collectionEntity.id;
   entity.amount = event.params.value;
   entity.total = event.params.total.toI32();
   entity.validity = event.params.validity;
-  entity.transaction = transactions.log(event).id;
+  entity.transaction = updateTxType(event, "COLLECTION_OFFER_CREATED");
 
   entity.save();
 }
@@ -105,6 +109,7 @@ export function handleCollectionOfferDeleted(
       );
       collectionEntity.save();
     }
+    updateTxType(event, "COLLECTION_OFFER_DELETED")
     store.remove("collectionOffer", entity.id);
   }
 }
@@ -127,12 +132,15 @@ export function handleTokenOfferAccepted(event: TokenOfferAcceptedEvent): void {
     updateTokenOffer(event);
     let creatorEntity = fetchAccountStatistics(creator);
     creatorEntity.points = creatorEntity.points + 20;
+    creatorEntity.salesVolume = creatorEntity.salesVolume.plus(event.params.value)
 
     let sellerEntity = fetchAccountStatistics(
       event.params.seller.toHexString()
     );
     sellerEntity.points = sellerEntity.points + 10;
+    sellerEntity.totalSales = sellerEntity.totalSales + 1
 
+    updateTxType(event, "TOKEN_OFFER_ACCEPTED")
     sellerEntity.save();
     creatorEntity.save();
     collectionEntity.save();
@@ -159,6 +167,7 @@ export function handleTokenOfferCancelled(
       collectionEntity.valueLocked = collectionEntity.valueLocked.minus(value);
       collectionEntity.save();
     }
+    updateTxType(event, "TOKEN_OFFER_DELETED")
     store.remove("collectionTokenOffer", id);
   }
 }
@@ -187,7 +196,7 @@ export function handleTokenOfferCreated(event: TokenOfferCreatedEvent): void {
   entity.value = event.params.value;
   entity.validity = event.params.validity;
 
-  entity.transaction = transactions.log(event).id;
+  entity.transaction = updateTxType(event, "TOKEN_OFFER_CREATED");
 
   entity.save();
 }
@@ -211,6 +220,7 @@ export function handleTokenOfferUpdated(event: TokenOfferUpdatedEvent): void {
     }
     entity.value = event.params.value;
     entity.validity = event.params.validity;
+    entity.transaction = updateTxType(event, "TOKEN_OFFER_UPDATED");
     entity.save();
   }
 }
