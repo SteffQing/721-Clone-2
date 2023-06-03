@@ -74,7 +74,7 @@ export function handleTransfer(event: TransferEvent): void {
 
       receiverAccountCollection.save();
     }
-    if (receiverAddress.id == constants.Auction) {
+    if (receiverAddress.id == constants.Auction.toLowerCase()) {
       token.owner = senderAddress.id;
     } else {
       token.owner = receiverAddress.id;

@@ -1,4 +1,4 @@
-import { loanContract, loanBid, lockId, account } from "../../generated/schema";
+import { loanContract, loanBid, lockId, account, protocol } from "../../generated/schema";
 import {
   ContractOpened as ContractOpenedEvent,
   ContractActive as ContractActiveEvent,
@@ -11,7 +11,7 @@ import {
   UpdateProtocolFees as UpdateProtocolFeesEvent,
 } from "../../generated/P2PLending/P2PLending";
 import { constants } from "../graphprotcol-utls";
-import { Address } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
 import { fetchAccount, fetchAccountStatistics } from "../utils/erc721";
 import { updateProtocolFeeParameters, updateProtocolLoanData, updateTxType } from "./marketplace";
 
@@ -52,7 +52,7 @@ export function handleContractActive(event: ContractActiveEvent): void {
       bidEntity.save();
     }
     updateProtocolLoanData(
-      Address.fromString(constants.P2P),
+      Address.fromString(constants.P2P.toLowerCase()),
       entity.amount,
       constants.BIGINT_ZERO
     );
@@ -81,6 +81,20 @@ export function handleLiquidation(event: LiquidateEvent): void {
   if (entity != null) {
     entity.status = "LIQUIDATED";
     entity.transaction = updateTxType(event, "LOAN_LIQUIDATED")
+    let borrower = fetchAccountStatistics(entity.borrower)
+    borrower.defaultCount = borrower.defaultCount + 1
+    let protocolEntity = protocol.load(Bytes.fromHexString(constants.P2P.toLowerCase()))
+
+    if(entity.lender != null && protocolEntity){
+      let securityFee = BigInt.fromI32(protocolEntity.securityFee)
+      let _securityFee = entity.amount.times(securityFee)
+      let interest = _securityFee.div(BigInt.fromI32(10000))
+      let lender = fetchAccountStatistics(entity.lender)
+      lender.earnedInterest = lender.earnedInterest.plus(interest)
+      lender.revenue = lender.revenue.plus(interest)
+      lender.save()
+    }
+    borrower.save()
     entity.save();
   }
 }
@@ -91,16 +105,18 @@ export function handleLoansRepaid(event: LoanRepaidEvent): void {
     entity.status = "LOAN_REPAID";
     let interest = event.params.repaidInterest
     updateProtocolLoanData(
-      Address.fromString(constants.P2P),
+      Address.fromString(constants.P2P.toLowerCase()),
       constants.BIGINT_ZERO,
       interest
     );
     let borrower = fetchAccountStatistics(entity.borrower)
     borrower.paidInterest = borrower.paidInterest.plus(interest)
+    borrower.save()
     if(entity.lender != null){
       let lender = fetchAccountStatistics(entity.lender)
       lender.earnedInterest = lender.earnedInterest.plus(interest)
       lender.revenue = lender.revenue.plus(interest)
+      lender.save()
     }
     entity.transaction = updateTxType(event, "LOAN_REPAID")
     entity.save();
@@ -156,7 +172,7 @@ export function handleCancelledBid(event: BidClosedEvent): void {
 
 export function handleProtocolFeeUpdate(event: UpdateProtocolFeesEvent): void {
   updateProtocolFeeParameters(
-    Address.fromString(constants.P2P),
+    Address.fromString(constants.P2P.toLowerCase()),
     event.params.securityFee,
     event.params.protocolFee
   );
