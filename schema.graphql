@@ -659,7 +659,7 @@ type loanContract @entity {
   borrower: account!
 
   " The lender address "
-  lender: account
+  lender: account!
 
   " The interest/apr to be paid "
   interest: Int!

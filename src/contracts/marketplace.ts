@@ -9,6 +9,8 @@ import {
   ItemUpdated as ItemUpdatedEvent,
   RevenueWithdrawn as RevenueWithdrawnEvent,
   ProtocolCreated as ProtocolCreatedEvent,
+  TradeFeeUpdated as TradeFeeUpdatedEvent,
+  ProtocolRemoved as ProtocolRemovedEvent
 } from "../../generated/Marketplace/Marketplace";
 import {
   supportedCollection,
@@ -165,6 +167,22 @@ export function handleProtocolCreation(event: ProtocolCreatedEvent): void {
   entity.averageLoanAmount = constants.BIGDECIMAL_ZERO
   entity.totalPaidInterest = constants.BIGINT_ZERO;
   entity.save();
+}
+
+export function handleProtocolRemoval(event: ProtocolRemovedEvent):void{
+  let entity = protocol.load(event.params.protocol)
+  if(entity != null){
+    store.remove("protocol", entity.id.toHexString())
+  }
+}
+
+export function handleFeeUpdate(event: TradeFeeUpdatedEvent): void {
+  let marketplace = constants.Marketplace.toLowerCase()
+  updateProtocolFeeParameters(
+    Address.fromString(marketplace),
+    0,
+    event.params.fees.toI32()
+  );
 }
 
 export function updateProtocolLoanData(

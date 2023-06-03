@@ -92,7 +92,7 @@ export function fetchToken(
     tokenEntity.tokenId = id.toString();
 
     //update collection's total supply
-    let Collection = Contract721.bind(Bytes.fromHexString(collection.id));
+    let Collection = Contract721.bind(Address.fromString(collection.id));
     let try_totalSupply = Collection.try_totalSupply();
     let tokenURI = Collection.try_tokenURI(id);
 
@@ -101,7 +101,7 @@ export function fetchToken(
     collection.totalSupply = try_totalSupply.reverted
       ? BigInt.fromI32(0)
       : try_totalSupply.value;
-    let _collections = constants.Collections.map(_collection => _collection.toLowerCase())
+    let _collections = constants.Collections.map<string>((_collection: string) => _collection.toLowerCase())
     let isCollectionSupported = _collections.includes(
       collection.id
     );
@@ -131,7 +131,7 @@ export function fetchAccount(address: Address): account {
 }
 
 export function fetchAccountStatistics(address: string): accountStatistics {
-  let addressBytes = Address.fromHexString(address)
+  let addressBytes = Address.fromString(address)
   let accountEntity = accountStatistics.load(addressBytes);
   if (accountEntity == null) {
     accountEntity = new accountStatistics(addressBytes);

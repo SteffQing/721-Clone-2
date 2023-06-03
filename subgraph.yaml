@@ -49,6 +49,8 @@ dataSources:
           handler: handleFeeUpdate
         - event: ProtocolCreated(indexed address,string,uint8,uint8)
           handler: handleProtocolCreation
+        - event: ProtocolRemoved(indexed address)
+          handler: handleProtocolRemoval
       file: ./src/contracts/marketplace.ts
   - kind: ethereum
     name: IERC721
@@ -200,10 +202,6 @@ dataSources:
           handler: handleLostBid
         - event: UpdateProtocolFees(uint16,uint16)
           handler: handleProtocolFeeUpdate
-        - event: UpdateProtocolBorrowParameters(uint16,uint256)
-          handler: handleProtocolBorrowParameters
-        - event: UpdateProtocolDateParameters(uint8,uint8)
-          handler: handleProtocolDateParameters
       file: ./src/contracts/p2plending.ts
 templates:
   - name: CollectionMetadata

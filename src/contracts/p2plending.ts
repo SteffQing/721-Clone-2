@@ -18,6 +18,7 @@ import { updateProtocolFeeParameters, updateProtocolLoanData, updateTxType } fro
 export function handleContractOpened(event: ContractOpenedEvent): void {
   let entity = new loanContract(event.params.id.toHexString());
   entity.borrower = fetchAccount(event.params.borrower).id;
+  entity.lender = constants.ADDRESS_ZERO;
   entity.amount = event.params.amount;
   entity.interest = event.params.interest;
   entity.status = "PENDING";
@@ -84,16 +85,16 @@ export function handleLiquidation(event: LiquidateEvent): void {
     let borrower = fetchAccountStatistics(entity.borrower)
     borrower.defaultCount = borrower.defaultCount + 1
     let protocolEntity = protocol.load(Bytes.fromHexString(constants.P2P.toLowerCase()))
-
-    if(entity.lender != null && protocolEntity){
-      let securityFee = BigInt.fromI32(protocolEntity.securityFee)
-      let _securityFee = entity.amount.times(securityFee)
-      let interest = _securityFee.div(BigInt.fromI32(10000))
-      let lender = fetchAccountStatistics(entity.lender)
-      lender.earnedInterest = lender.earnedInterest.plus(interest)
-      lender.revenue = lender.revenue.plus(interest)
-      lender.save()
+    let securityFee: BigInt = constants.BIGINT_ZERO;
+    if(protocolEntity){
+      securityFee = BigInt.fromI32(protocolEntity.securityFee)
     }
+    let _securityFee = entity.amount.times(securityFee)
+    let interest = _securityFee.div(BigInt.fromI32(10000))
+    let lender = fetchAccountStatistics(entity.lender)
+    lender.earnedInterest = lender.earnedInterest.plus(interest)
+    lender.revenue = lender.revenue.plus(interest)
+    lender.save()
     borrower.save()
     entity.save();
   }
@@ -112,12 +113,10 @@ export function handleLoansRepaid(event: LoanRepaidEvent): void {
     let borrower = fetchAccountStatistics(entity.borrower)
     borrower.paidInterest = borrower.paidInterest.plus(interest)
     borrower.save()
-    if(entity.lender != null){
       let lender = fetchAccountStatistics(entity.lender)
       lender.earnedInterest = lender.earnedInterest.plus(interest)
       lender.revenue = lender.revenue.plus(interest)
       lender.save()
-    }
     entity.transaction = updateTxType(event, "LOAN_REPAID")
     entity.save();
   }
