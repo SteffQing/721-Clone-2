@@ -12,7 +12,7 @@ export function handleDeposit(event: DepositEvent): void {
   let entity = new lockId(event.params.lockId.toHexString());
   entity.depositor = fetchAccount(event.params.user).id;
   entity.protocol = event.params.protocol;
-  entity.collection = fetchRegistry(event.params.collection).id;
+  entity.collection = event.params.collection.toHexString();
   entity.expires = event.params.lockPeriod;
   entity.status = "ACTIVE";
   let _lockedTokens = loopCollection(
