@@ -10,7 +10,7 @@ import {
   RevenueWithdrawn as RevenueWithdrawnEvent,
   ProtocolCreated as ProtocolCreatedEvent,
   TradeFeeUpdated as TradeFeeUpdatedEvent,
-  ProtocolRemoved as ProtocolRemovedEvent
+  ProtocolRemoved as ProtocolRemovedEvent,
 } from "../../generated/Marketplace/Marketplace";
 import {
   supportedCollection,
@@ -81,8 +81,9 @@ export function handleItemDelisted(event: ItemDelistedEvent): void {
     .concat(tokenId.toString());
   let entity = saleInfo.load(tokenEntityId);
   if (entity != null) {
-    updateTxType(event, "FIXED_SALE_CANCELLED")
-    store.remove("saleInfo", entity.id);
+    entity.state = "NONE";
+    updateTxType(event, "FIXED_SALE_CANCELLED", tokenEntityId);
+    entity.save();
   }
 }
 
@@ -95,12 +96,15 @@ export function handleItemListed(event: ItemListedEvent): void {
     .concat(tokenId.toString());
   let timestampBigInt = BigInt.fromI32(event.block.timestamp.toI32());
   let Token = fetchToken(collectionEntity, tokenId, timestampBigInt);
-  let entity = new saleInfo(tokenEntityId);
+  let entity = saleInfo.load(tokenEntityId);
+  if (entity === null) {
+    entity = new saleInfo(tokenEntityId);
+  }
   entity.token = Token.id;
   entity.collection = collectionEntity.id;
   entity.seller = fetchAccount(event.params.seller).id;
   entity.salePrice = event.params.price;
-  entity.transaction = updateTxType(event, "FIXED_SALE_LISTING")
+  updateTxType(event, "FIXED_SALE_LISTING", tokenEntityId);
   entity.state = "FIXEDSALE";
   entity.save();
 }
@@ -113,6 +117,10 @@ export function handleItemSold(event: ItemSoldEvent): void {
     .concat("/")
     .concat(tokenId.toString());
   let entity = saleInfo.load(tokenEntityId);
+  if (entity !== null) {
+    entity.state = "NONE";
+    entity.save();
+  }
   updateSalesData(event);
   let sellerEntity = fetchAccountStatistics(
     fetchAccount(event.params.seller).id
@@ -124,11 +132,7 @@ export function handleItemSold(event: ItemSoldEvent): void {
   buyerEntity.salesVolume = buyerEntity.salesVolume.plus(event.params.price);
   buyerEntity.points = buyerEntity.points + 20;
   buyerEntity.save();
-  updateTxType(event, "FIXED_SALE_SOLD")
-
-  if (entity != null) {
-    store.remove("saleInfo", entity.id);
-  }
+  updateTxType(event, "FIXED_SALE_SOLD", tokenEntityId);
 }
 
 export function handleItemUpdated(event: ItemUpdatedEvent): void {
@@ -142,7 +146,7 @@ export function handleItemUpdated(event: ItemUpdatedEvent): void {
   let entity = saleInfo.load(tokenEntity.id);
   if (entity != null) {
     entity.salePrice = event.params.newPrice;
-    entity.transaction = updateTxType(event, "FIXED_SALE_UPDATED");
+    updateTxType(event, "FIXED_SALE_UPDATED", tokenEntity.id);
 
     entity.save();
   }
@@ -154,7 +158,6 @@ export function handleRevenueWithdrawn(event: RevenueWithdrawnEvent): void {
   entity.save();
 }
 
-
 export function handleProtocolCreation(event: ProtocolCreatedEvent): void {
   let _protocol = event.params.protocol;
   let entity = new protocol(_protocol);
@@ -163,21 +166,21 @@ export function handleProtocolCreation(event: ProtocolCreatedEvent): void {
   entity.securityFee = event.params.securityFee;
   entity.totalLoanCount = 0;
   entity.totalLoanVolume = constants.BIGDECIMAL_ZERO;
-  entity.largestLoan = constants.BIGDECIMAL_ZERO
-  entity.averageLoanAmount = constants.BIGDECIMAL_ZERO
+  entity.largestLoan = constants.BIGDECIMAL_ZERO;
+  entity.averageLoanAmount = constants.BIGDECIMAL_ZERO;
   entity.totalPaidInterest = constants.BIGINT_ZERO;
   entity.save();
 }
 
-export function handleProtocolRemoval(event: ProtocolRemovedEvent):void{
-  let entity = protocol.load(event.params.protocol)
-  if(entity != null){
-    store.remove("protocol", entity.id.toHexString())
+export function handleProtocolRemoval(event: ProtocolRemovedEvent): void {
+  let entity = protocol.load(event.params.protocol);
+  if (entity != null) {
+    store.remove("protocol", entity.id.toHexString());
   }
 }
 
 export function handleFeeUpdate(event: TradeFeeUpdatedEvent): void {
-  let marketplace = constants.Marketplace.toLowerCase()
+  let marketplace = constants.Marketplace.toLowerCase();
   updateProtocolFeeParameters(
     Address.fromString(marketplace),
     0,
@@ -192,14 +195,16 @@ export function updateProtocolLoanData(
 ): void {
   let entity = protocol.load(_protocol);
   if (entity) {
-    let loanCount = entity.totalLoanCount
-    let loanAmount = amount.toBigDecimal()
+    let loanCount = entity.totalLoanCount;
+    let loanAmount = amount.toBigDecimal();
     entity.totalLoanCount = loanCount + 1;
     entity.totalLoanVolume = entity.totalLoanVolume.plus(loanAmount);
-    if(loanAmount.gt(entity.largestLoan)){
+    if (loanAmount.gt(entity.largestLoan)) {
       entity.largestLoan = loanAmount;
     }
-    entity.averageLoanAmount = entity.totalLoanVolume.div(BigInt.fromI32(loanCount).toBigDecimal())
+    entity.averageLoanAmount = entity.totalLoanVolume.div(
+      BigInt.fromI32(loanCount).toBigDecimal()
+    );
     entity.totalPaidInterest = entity.totalPaidInterest.plus(interest);
     entity.save();
   }
@@ -218,9 +223,16 @@ export function updateProtocolFeeParameters(
   }
 }
 
-export function updateTxType(event: ethereum.Event, txType: string):string{
-  let tx = transactions.log(event)
-  tx.txType = txType
-  tx.save()
-  return tx.id
+export function updateTxType(
+  event: ethereum.Event,
+  txType: string,
+  sale: string | null = null
+): string {
+  let tx = transactions.log(event);
+  tx.txType = txType;
+  if (sale !== null) {
+    tx.saleInfo = sale;
+  }
+  tx.save();
+  return tx.id;
 }

@@ -1,4 +1,3 @@
-import { store } from "@graphprotocol/graph-ts";
 import {
   AuctionCancelled as AuctionCancelledEvent,
   AuctionStarted as AuctionStartedEvent,
@@ -19,8 +18,9 @@ export function handleAuctionCancelled(event: AuctionCancelledEvent): void {
     .concat(tokenId);
   let entity = saleInfo.load(tokenEntityId);
   if (entity != null) {
-    updateTxType(event, "AUCTION_SALE_CANCELLED")
-    store.remove("saleInfo", entity.id);
+    entity.state = "NONE";
+    updateTxType(event, "AUCTION_SALE_CANCELLED", tokenEntityId);
+    entity.save();
   }
 }
 
@@ -31,14 +31,17 @@ export function handleAuctionStarted(event: AuctionStartedEvent): void {
     .concat(collectionAddress)
     .concat("/")
     .concat(tokenId);
-  let entity = new saleInfo(tokenEntityId);
+  let entity = saleInfo.load(tokenEntityId);
+  if (entity === null) {
+    entity = new saleInfo(tokenEntityId);
+  }
   entity.seller = fetchAccount(event.params.seller).id;
   entity.collection = collectionAddress;
   entity.token = tokenEntityId;
   entity.state = "AUCTIONSALE";
   entity.startingBid = event.params.startingBid;
   entity.validity = event.params.endAuctionTime;
-  entity.transaction = updateTxType(event, "AUCTION_SALE_LISTING")
+  updateTxType(event, "AUCTION_SALE_LISTING", tokenEntityId);
 
   entity.save();
 }
@@ -55,18 +58,21 @@ export function handleBidAccepted(event: BidAcceptedEvent): void {
     fetchAccount(event.params.seller).id
   );
   sellerEntity.points = sellerEntity.points + 10;
-  sellerEntity.totalSales = sellerEntity.totalSales + 1
+  sellerEntity.totalSales = sellerEntity.totalSales + 1;
   sellerEntity.save();
 
   let bidderEntity = fetchAccountStatistics(
     fetchAccount(event.params.buyer).id
   );
   bidderEntity.points = bidderEntity.points + 20;
-  bidderEntity.salesVolume = bidderEntity.salesVolume.plus(event.params.amount)
+  bidderEntity.salesVolume = bidderEntity.salesVolume.plus(event.params.amount);
   bidderEntity.save();
-  updateTxType(event, "AUCTION_BID_ACCEPTED")
-
-  store.remove("saleInfo", tokenEntityId);
+  updateTxType(event, "AUCTION_BID_ACCEPTED", tokenEntityId);
+  let entity = saleInfo.load(tokenEntityId);
+  if (entity !== null) {
+    entity.state = "NONE";
+    entity.save();
+  }
 }
 
 export function handleBidCreated(event: BidCreatedEvent): void {
@@ -82,11 +88,7 @@ export function handleBidCreated(event: BidCreatedEvent): void {
     entity.highestBidder = bidder;
     entity.highestBid = event.params.amount;
 
-    let bidEntityId = collectionAddress
-      .concat("/")
-      .concat(tokenId)
-      .concat("/")
-      .concat(bidder);
+    let bidEntityId = tokenEntityId.concat("/").concat(bidder);
     let bidEntity = new auctionBid(bidEntityId);
     bidEntity.bidder = bidder;
     bidEntity.bid = event.params.amount;
@@ -98,7 +100,7 @@ export function handleBidCreated(event: BidCreatedEvent): void {
     }
     bids.push(bidEntityId);
     entity.auctionBids = bids;
-    updateTxType(event, "AUCTION_BID_CREATED")
+    updateTxType(event, "AUCTION_BID_CREATED", tokenEntityId);
 
     entity.save();
   }

@@ -55,13 +55,14 @@ export function fetchRegistry(address: Address): collection {
     collectionEntity.name = try_name.reverted ? "" : try_name.value;
     collectionEntity.symbol = try_symbol.reverted ? "" : try_symbol.value;
     collectionEntity.mintPrice = mintPrice;
-    collectionEntity.creator = try_owner.reverted ? null : fetchAccount(try_owner.value).id;
+    collectionEntity.creator = try_owner.reverted
+      ? null
+      : fetchAccount(try_owner.value).id;
     collectionEntity.supportsMetadata = supportsInterface(erc721, "5b5e139f"); // ERC721Metadata
     collectionEntity.totalSales = 0;
     collectionEntity.totalVolume = constants.BIGDECIMAL_ZERO;
     collectionEntity.topSale = constants.BIGDECIMAL_ZERO;
     collectionEntity.valueLocked = constants.BIGINT_ZERO;
-    collectionEntity.lockedTokens = 0;
 
     collectionEntity.save();
   }
@@ -73,11 +74,7 @@ export function fetchToken(
   id: BigInt,
   timestamp: BigInt
 ): token {
-  let tokenid = "kcc/".concat(
-    collection.id
-      .concat("/")
-      .concat(id.toString())
-  );
+  let tokenid = "kcc/".concat(collection.id.concat("/").concat(id.toString()));
   let tokenEntity = token.load(tokenid);
   let timeout = BigInt.fromI32(2592000);
   let lastUpdate = tokenEntity
@@ -101,10 +98,10 @@ export function fetchToken(
     collection.totalSupply = try_totalSupply.reverted
       ? BigInt.fromI32(0)
       : try_totalSupply.value;
-    let _collections = constants.Collections.map<string>((_collection: string) => _collection.toLowerCase())
-    let isCollectionSupported = _collections.includes(
-      collection.id
+    let _collections = constants.Collections.map<string>(
+      (_collection: string) => _collection.toLowerCase()
     );
+    let isCollectionSupported = _collections.includes(collection.id);
     if (isCollectionSupported && tokenURI.reverted == false) {
       const tokenIpfsHash = tokenURI.value;
       let ipfsHash = checkUri(tokenIpfsHash);
@@ -131,7 +128,7 @@ export function fetchAccount(address: Address): account {
 }
 
 export function fetchAccountStatistics(address: string): accountStatistics {
-  let addressBytes = Address.fromString(address)
+  let addressBytes = Address.fromString(address);
   let accountEntity = accountStatistics.load(addressBytes);
   if (accountEntity == null) {
     accountEntity = new accountStatistics(addressBytes);
@@ -140,12 +137,14 @@ export function fetchAccountStatistics(address: string): accountStatistics {
     accountEntity.totalSales = 0;
     accountEntity.paidInterest = constants.BIGINT_ZERO;
     accountEntity.earnedInterest = constants.BIGINT_ZERO;
-    accountEntity.loansCount = 0;
-    accountEntity.loansFunded = 0;
+    accountEntity.borrowCount = 0;
+    accountEntity.lendCount = 0;
     accountEntity.defaultCount = 0;
-    accountEntity.withdrawableBid = constants.BIGINT_ZERO
+    accountEntity.withdrawableBid = constants.BIGINT_ZERO;
     accountEntity.revenue = constants.BIGINT_ZERO;
-    accountEntity.account = fetchAccount(addressBytes).id
+    accountEntity.totalBorrowedAmount = constants.BIGINT_ZERO;
+    accountEntity.totalLentAmount = constants.BIGINT_ZERO;
+    accountEntity.account = fetchAccount(addressBytes).id;
     accountEntity.save();
   }
   return accountEntity;

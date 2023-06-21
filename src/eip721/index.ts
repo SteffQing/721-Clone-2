@@ -104,6 +104,7 @@ export function handleTransfer(event: TransferEvent): void {
       let newTransferCount = tx.unmatchedTransferCount + 1;
       tx.unmatchedTransferCount = newTransferCount;
       tx.transfers = transferArray;
+      tx.txType = "TRANSFER";
       tx.save();
     }
   }

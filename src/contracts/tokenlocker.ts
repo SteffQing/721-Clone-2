@@ -4,21 +4,19 @@ import {
   Withdraw as WithdrawEvent,
   Liquidate as LiquidateEvent,
 } from "../../generated/TokenLocker/TokenLocker";
-import { lockId } from "../../generated/schema";
-import { fetchAccount, fetchRegistry } from "../utils/erc721";
+import { collection, lockId } from "../../generated/schema";
+import { fetchAccount } from "../utils/erc721";
 import { updateTxType } from "./marketplace";
 
 export function handleDeposit(event: DepositEvent): void {
   let entity = new lockId(event.params.lockId.toHexString());
   entity.depositor = fetchAccount(event.params.user).id;
   entity.protocol = event.params.protocol;
-  entity.collection = event.params.collection.toHexString();
+  let _collection = event.params.collection.toHexString();
+  entity.collection = _collection;
   entity.expires = event.params.lockPeriod;
   entity.status = "ACTIVE";
-  let _lockedTokens = loopCollection(
-    event.params.collection.toHexString(),
-    event.params.tokens
-  );
+  let _lockedTokens = loopCollection(_collection, event.params.tokens);
   entity.tokens = _lockedTokens;
   entity.transaction = updateTxType(event, "TOKENS_LOCKED");
   entity.save();
