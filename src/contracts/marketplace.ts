@@ -66,7 +66,7 @@ export function handleCollectionVerification(
   if (entity != null) {
     // Add ipfs hash
     entity.metadata = event.params.ipfs;
-    log.info("IPFS hash: {}", [event.params.ipfs]);
+    log.warning("IPFS hash: {}", [event.params.ipfs]);
     // create template to fetch the data
     CollectionDataTemplate.create(event.params.ipfs);
     entity.save();
