@@ -1,5 +1,10 @@
 import { BigInt, store } from "@graphprotocol/graph-ts";
-import { collection, saleInfo } from "../../generated/schema";
+import {
+  collectionOffer,
+  collectionTokenOffer,
+  collection,
+  saleInfo,
+} from "../../generated/schema";
 import {
   CollectionOfferAccepted as CollectionOfferAcceptedEvent,
   CollectionOfferCreated as CollectionOfferCreatedEvent,
@@ -9,7 +14,6 @@ import {
   TokenOfferCreated as TokenOfferCreatedEvent,
   TokenOfferUpdated as TokenOfferUpdatedEvent,
 } from "../../generated/Offers/Offers";
-import { collectionOffer, collectionTokenOffer } from "../../generated/schema";
 import {
   fetchAccount,
   fetchAccountStatistics,
