@@ -1,7 +1,10 @@
-import { json, Bytes, dataSource,
+import {
+  json,
+  Bytes,
+  dataSource,
   JSONValue,
-  JSONValueKind } from "@graphprotocol/graph-ts";
-import { CollectionMetadata } from "../generated/schema";
+  JSONValueKind,
+} from "@graphprotocol/graph-ts";
 import { TokenAttribute, TokenMetadata } from "../generated/schema";
 
 export function handleMetadata(content: Bytes): void {
@@ -59,44 +62,6 @@ function setAttributes(attributeArray: JSONValue[]): void {
         tokenAttributeEntity.value = try_value.toBool().toString();
       }
       tokenAttributeEntity.save();
-    }
-  }
-}
-
-export function handleCollectionData(content: Bytes): void {
-  let collectionData = new CollectionMetadata(dataSource.stringParam());
-
-  const contentValue = json.try_fromBytes(content);
-  if (contentValue.isOk) {
-    const value = contentValue.value.toObject();
-    if (value) {
-      const banner = value.get("banner");
-      const placeholder = value.get("placeholder");
-      const small = value.get("small");
-      const description = value.get("description");
-      if (banner && placeholder && small && description) {
-        collectionData.bannerImage = banner.toString();
-        collectionData.placeholderImage = placeholder.toString();
-        collectionData.smallImage = small.toString();
-        collectionData.description = description.toString();
-      }
-      const twitter = value.get("twitter");
-      const discord = value.get("discord");
-      const telegram = value.get("telegram");
-      const website = value.get("website");
-      if (twitter) {
-        collectionData.twitter = twitter.toString();
-      }
-      if (discord) {
-        collectionData.discord = discord.toString();
-      }
-      if (telegram) {
-        collectionData.telegram = telegram.toString();
-      }
-      if (website) {
-        collectionData.website = website.toString();
-      }
-      collectionData.save();
     }
   }
 }

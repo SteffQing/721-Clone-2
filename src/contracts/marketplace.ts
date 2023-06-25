@@ -19,7 +19,7 @@ import {
   collection,
 } from "../../generated/schema";
 import { CollectionMetadata as CollectionDataTemplate } from "../../generated/templates";
-import { store, BigInt, Address, ethereum } from "@graphprotocol/graph-ts";
+import { store, BigInt, Address, ethereum, log } from "@graphprotocol/graph-ts";
 import {
   fetchAccount,
   fetchAccountStatistics,
@@ -66,6 +66,7 @@ export function handleCollectionVerification(
   if (entity != null) {
     // Add ipfs hash
     entity.metadata = event.params.ipfs;
+    log.warning("IPFS hash: {}", [event.params.ipfs]);
     // create template to fetch the data
     CollectionDataTemplate.create(event.params.ipfs);
     entity.save();
