@@ -705,6 +705,62 @@ type loanBid @entity {
 
 type _Schema_
   @fulltext(
+    name: "searchTokens"
+    language: en
+    algorithm: rank
+    include: [
+      { entity: "token", fields: [{ name: "tokenId" }] }
+      { entity: "account", fields: [{ name: "id" }] }
+      {
+        entity: "collection"
+        fields: [{ name: "id", name: "name", name: "symbol" }]
+      }
+      { entity: "TokenMetadata", fields: [{ name: "name" }] }
+      {
+        entity: "TokenAttribute"
+        fields: [{ name: "traitType", name: "value" }]
+      }
+    ]
+  )
+type _Schema_
+  @fulltext(
+    name: "searchTokenName"
+    language: en
+    algorithm: rank
+    include: [
+      { entity: "TokenMetadata", fields: [{ name: "name" }] }
+      { entity: "token", fields: [{ name: "tokenId" }] }
+      { entity: "account", fields: [{ name: "id" }] }
+      {
+        entity: "collection"
+        fields: [{ name: "id", name: "name", name: "symbol" }]
+      }
+      {
+        entity: "TokenAttribute"
+        fields: [{ name: "traitType", name: "value" }]
+      }
+    ]
+  )
+type _Schema_
+  @fulltext(
+    name: "searchTokenAttribute"
+    language: en
+    algorithm: rank
+    include: [
+      {
+        entity: "TokenAttribute"
+        fields: [{ name: "traitType", name: "value" }]
+      }
+      { entity: "TokenMetadata", fields: [{ name: "name" }] }
+      { entity: "token", fields: [{ name: "tokenId" }] }
+      { entity: "account", fields: [{ name: "id" }] }
+      {
+        entity: "collection"
+        fields: [{ name: "id", name: "name", name: "symbol" }]
+      }
+    ]
+  )
+  @fulltext(
     name: "search"
     language: en
     algorithm: rank
