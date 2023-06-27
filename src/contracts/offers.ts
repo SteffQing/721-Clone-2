@@ -1,4 +1,4 @@
-import { BigInt, store } from "@graphprotocol/graph-ts";
+import { BigInt, log, store } from "@graphprotocol/graph-ts";
 import {
   collectionOffer,
   collectionTokenOffer,
@@ -84,7 +84,6 @@ export function handleCollectionOfferCreated(
     collectionEntity.id.concat("/").concat(creator.toHexString())
   );
   let creatorEntity = fetchAccountStatistics(fetchAccount(creator).id);
-
   collectionEntity.valueLocked = collectionEntity.valueLocked.plus(
     event.params.value
   );
