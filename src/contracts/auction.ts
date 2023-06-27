@@ -38,6 +38,7 @@ export function handleAuctionStarted(event: AuctionStartedEvent): void {
   entity.seller = fetchAccount(event.params.seller).id;
   entity.collection = collectionAddress;
   entity.token = tokenEntityId;
+  entity.timestamp = event.block.timestamp.toI32();
   entity.state = "AUCTIONSALE";
   entity.startingBid = event.params.startingBid;
   entity.validity = event.params.endAuctionTime;

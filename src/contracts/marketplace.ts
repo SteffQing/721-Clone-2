@@ -105,6 +105,7 @@ export function handleItemListed(event: ItemListedEvent): void {
   entity.collection = collectionEntity.id;
   entity.seller = fetchAccount(event.params.seller).id;
   entity.salePrice = event.params.price;
+  entity.timestamp = event.block.timestamp.toI32();
   updateTxType(event, "FIXED_SALE_LISTING", tokenEntityId);
   entity.state = "FIXEDSALE";
   entity.save();
