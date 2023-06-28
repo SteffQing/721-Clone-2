@@ -2,8 +2,8 @@ import {
   loanContract,
   loanBid,
   lockId,
-  account,
   protocol,
+  collectionLoanStatistic,
 } from "../../generated/schema";
 import {
   ContractOpened as ContractOpenedEvent,
@@ -17,7 +17,7 @@ import {
   UpdateProtocolFees as UpdateProtocolFeesEvent,
 } from "../../generated/P2PLending/P2PLending";
 import { constants } from "../graphprotcol-utls";
-import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 import { fetchAccount, fetchAccountStatistics } from "../utils/erc721";
 import {
   updateProtocolFeeParameters,
@@ -117,6 +117,13 @@ export function handleLiquidation(event: LiquidateEvent): void {
       entity.amount,
       interest
     );
+    let lockIdEntity = lockId.load(entity.lockId._id);
+    if (lockIdEntity) {
+      log.warning("LockIdEntity: {}", [entity.lockId._id]);
+      let collection = lockIdEntity.collection;
+      log.warning("Collection: {}", [collection]);
+      updateCollectionStats(collection, entity.amount, interest);
+    }
     let lender = fetchAccountStatistics(entity.lender);
     lender.earnedInterest = lender.earnedInterest.plus(interest);
     lender.revenue = lender.revenue.plus(interest);
@@ -136,6 +143,13 @@ export function handleLoansRepaid(event: LoanRepaidEvent): void {
       entity.amount,
       interest
     );
+    let lockIdEntity = lockId.load(entity.lockId._id);
+    if (lockIdEntity) {
+      log.warning("LockIdEntity: {}", [entity.lockId._id]);
+      let collection = lockIdEntity.collection;
+      log.warning("Collection: {}", [collection]);
+      updateCollectionStats(collection, entity.amount, interest);
+    }
     let borrower = fetchAccountStatistics(entity.borrower);
     borrower.paidInterest = borrower.paidInterest.plus(interest);
     borrower.points = borrower.points + 20;
@@ -214,6 +228,47 @@ export function handleProtocolFeeUpdate(event: UpdateProtocolFeesEvent): void {
     event.params.securityFee,
     event.params.protocolFee
   );
+}
+
+function fetchCollectionStats(collection: string): collectionLoanStatistic {
+  let _collection = Bytes.fromHexString(collection);
+  let collectionEntity = new collectionLoanStatistic(_collection);
+  collectionEntity.averageLoanAmount = constants.BIGDECIMAL_ZERO;
+  collectionEntity.largestLoan = constants.BIGDECIMAL_ZERO;
+  collectionEntity.totalLoanVolume = constants.BIGDECIMAL_ZERO;
+  collectionEntity.totalLoanCount = 0;
+  collectionEntity.totalPaidInterest = constants.BIGINT_ZERO;
+  collectionEntity.collection = collection;
+  collectionEntity.save();
+
+  return collectionEntity as collectionLoanStatistic;
+}
+function updateCollectionStats(
+  collection: string,
+  amount: BigInt,
+  interest: BigInt
+): void {
+  let _collection = Bytes.fromHexString(collection);
+  let collectionEntity = collectionLoanStatistic.load(_collection);
+  if (collectionEntity === null) {
+    collectionEntity = fetchCollectionStats(collection);
+  }
+  let loanCount = collectionEntity.totalLoanCount;
+  let loanAmount = amount.toBigDecimal();
+  collectionEntity.totalLoanCount = loanCount + 1;
+  collectionEntity.totalLoanVolume = collectionEntity.totalLoanVolume.plus(
+    loanAmount
+  );
+  if (loanAmount.gt(collectionEntity.largestLoan)) {
+    collectionEntity.largestLoan = loanAmount;
+  }
+  collectionEntity.averageLoanAmount = collectionEntity.totalLoanVolume.div(
+    BigInt.fromI32(loanCount).toBigDecimal()
+  );
+  collectionEntity.totalPaidInterest = collectionEntity.totalPaidInterest.plus(
+    interest
+  );
+  collectionEntity.save();
 }
 
 // Path: src\contracts\p2plending.ts

@@ -19,7 +19,7 @@ import {
   collection,
 } from "../../generated/schema";
 import { CollectionMetadata as CollectionDataTemplate } from "../../generated/templates";
-import { store, BigInt, Address, ethereum, log } from "@graphprotocol/graph-ts";
+import { store, BigInt, Address, ethereum } from "@graphprotocol/graph-ts";
 import {
   fetchAccount,
   fetchAccountStatistics,
@@ -65,10 +65,10 @@ export function handleCollectionVerification(
   let entity = supportedCollection.load(event.params.collection.toHex());
   if (entity != null) {
     // Add ipfs hash
-    entity.metadata = event.params.ipfs;
-    log.warning("IPFS hash: {}", [event.params.ipfs]);
+    let ipfsHash = event.params.ipfs;
+    entity.metadata = ipfsHash;
     // create template to fetch the data
-    CollectionDataTemplate.create(event.params.ipfs);
+    CollectionDataTemplate.create(ipfsHash);
     entity.save();
   }
 }
@@ -82,7 +82,7 @@ export function handleItemDelisted(event: ItemDelistedEvent): void {
     .concat(tokenId.toString());
   let entity = saleInfo.load(tokenEntityId);
   if (entity != null) {
-    entity.state = "NONE";
+    clearSaleInfo(entity);
     updateTxType(event, "FIXED_SALE_CANCELLED", tokenEntityId);
     entity.save();
   }
@@ -103,7 +103,6 @@ export function handleItemListed(event: ItemListedEvent): void {
   }
   entity.token = Token.id;
   entity.collection = collectionEntity.id;
-  entity.seller = fetchAccount(event.params.seller).id;
   entity.salePrice = event.params.price;
   entity.timestamp = event.block.timestamp.toI32();
   updateTxType(event, "FIXED_SALE_LISTING", tokenEntityId);
@@ -120,7 +119,7 @@ export function handleItemSold(event: ItemSoldEvent): void {
     .concat(tokenId.toString());
   let entity = saleInfo.load(tokenEntityId);
   if (entity !== null) {
-    entity.state = "NONE";
+    clearSaleInfo(entity);
     entity.save();
   }
   updateSalesData(event);
@@ -237,4 +236,14 @@ export function updateTxType(
   }
   tx.save();
   return tx.id;
+}
+export function clearSaleInfo(entity: saleInfo): void {
+  entity.state = "NONE";
+  entity.salePrice = null;
+  entity.startingBid = null;
+  entity.highestBid = null;
+  entity.highestBidder = null;
+  entity.validity = null;
+  entity.auctionBids = null;
+  entity.timestamp = 0;
 }

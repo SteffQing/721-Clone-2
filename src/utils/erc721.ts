@@ -1,4 +1,4 @@
-import { Address, BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
 import { IERC721Metadata } from "../../generated/IERC721/IERC721Metadata";
 

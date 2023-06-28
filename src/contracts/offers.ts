@@ -21,7 +21,7 @@ import {
   fetchToken,
 } from "../utils/erc721";
 import { updateCollectionOffer, updateTokenOffer } from "./utils";
-import { updateTxType } from "./marketplace";
+import { clearSaleInfo, updateTxType } from "./marketplace";
 
 export function handleCollectionOfferAccepted(
   event: CollectionOfferAcceptedEvent
@@ -54,7 +54,7 @@ export function handleCollectionOfferAccepted(
     if (saleInfoEntity == null) {
       saleInfoEntity = new saleInfo(tokenEntityId);
     }
-    saleInfoEntity.state = "NONE";
+    clearSaleInfo(saleInfoEntity);
     saleInfoEntity.save();
     let collectionEntity = collection.load(collectionAddress);
     if (collectionEntity != null) {
@@ -149,7 +149,7 @@ export function handleTokenOfferAccepted(event: TokenOfferAcceptedEvent): void {
     if (saleInfoEntity == null) {
       saleInfoEntity = new saleInfo(tokenEntityId);
     }
-    saleInfoEntity.state = "NONE";
+    clearSaleInfo(saleInfoEntity);
     updateTxType(event, "TOKEN_OFFER_ACCEPTED", tokenEntityId);
     saleInfoEntity.save();
     sellerEntity.save();

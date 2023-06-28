@@ -7,7 +7,7 @@ import {
 import { auctionBid, saleInfo } from "../../generated/schema";
 import { fetchAccount, fetchAccountStatistics } from "../utils/erc721";
 import { updateAuction } from "./utils";
-import { updateTxType } from "./marketplace";
+import { clearSaleInfo, updateTxType } from "./marketplace";
 
 export function handleAuctionCancelled(event: AuctionCancelledEvent): void {
   let collectionAddress = event.params.collection.toHex();
@@ -18,7 +18,7 @@ export function handleAuctionCancelled(event: AuctionCancelledEvent): void {
     .concat(tokenId);
   let entity = saleInfo.load(tokenEntityId);
   if (entity != null) {
-    entity.state = "NONE";
+    clearSaleInfo(entity);
     updateTxType(event, "AUCTION_SALE_CANCELLED", tokenEntityId);
     entity.save();
   }
@@ -35,7 +35,6 @@ export function handleAuctionStarted(event: AuctionStartedEvent): void {
   if (entity === null) {
     entity = new saleInfo(tokenEntityId);
   }
-  entity.seller = fetchAccount(event.params.seller).id;
   entity.collection = collectionAddress;
   entity.token = tokenEntityId;
   entity.timestamp = event.block.timestamp.toI32();
@@ -71,7 +70,7 @@ export function handleBidAccepted(event: BidAcceptedEvent): void {
   updateTxType(event, "AUCTION_BID_ACCEPTED", tokenEntityId);
   let entity = saleInfo.load(tokenEntityId);
   if (entity !== null) {
-    entity.state = "NONE";
+    clearSaleInfo(entity);
     entity.save();
   }
 }
