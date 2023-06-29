@@ -187,7 +187,7 @@ type contract @entity {
   asERC721: collection
 }
 
-type accountStatistics @entity {
+type accountStatistic @entity {
   " account address "
   id: Bytes!
 
@@ -269,7 +269,7 @@ type account @entity {
   lends: [loanContract!] @derivedFrom(field: "lender")
 
   " account statistics "
-  accountStatistics: accountStatistics @derivedFrom(field: "account")
+  accountStatistic: accountStatistic @derivedFrom(field: "account")
 }
 
 type collection @entity {
@@ -331,7 +331,7 @@ type collection @entity {
   accountCollection: [accountCollection!]! @derivedFrom(field: "collection")
 
   " Collection loan statistics "
-  loanStatistics: collectionLoanStatistic @derivedFrom(field: "collection")
+  loanStatistic: collectionLoanStatistic @derivedFrom(field: "collection")
 }
 
 type collectionLoanStatistic @entity {

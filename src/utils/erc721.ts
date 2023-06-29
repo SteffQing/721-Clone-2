@@ -6,7 +6,7 @@ import { Contract721 } from "../../generated/IERC721/Contract721";
 
 import {
   account,
-  accountStatistics,
+  accountStatistic,
   collection,
   contract,
   token,
@@ -127,11 +127,11 @@ export function fetchAccount(address: Address): account {
   return accountEntity as account;
 }
 
-export function fetchAccountStatistics(address: string): accountStatistics {
+export function fetchAccountStatistics(address: string): accountStatistic {
   let addressBytes = Address.fromString(address);
-  let accountEntity = accountStatistics.load(addressBytes);
+  let accountEntity = accountStatistic.load(addressBytes);
   if (accountEntity == null) {
-    accountEntity = new accountStatistics(addressBytes);
+    accountEntity = new accountStatistic(addressBytes);
     accountEntity.points = 0;
     accountEntity.salesVolume = constants.BIGINT_ZERO;
     accountEntity.totalSales = 0;
