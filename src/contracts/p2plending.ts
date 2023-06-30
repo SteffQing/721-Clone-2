@@ -34,9 +34,6 @@ export function handleContractOpened(event: ContractOpenedEvent): void {
   entity.status = "PENDING";
   entity.expiry = event.params.expiry;
   let transactions = entity.transactions;
-  if (transactions == null) {
-    transactions = [];
-  }
   transactions.push(updateTxType(event, "LOAN_REQUEST_OPEN"));
   entity.transactions = transactions;
   let tokenLockerEntity = lockId.load(event.params.lockId.toHexString());
