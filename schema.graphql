@@ -683,7 +683,7 @@ type loanContract @entity {
   bids: [loanBid!] @derivedFrom(field: "contract")
 
   " Transactions in which a loan contract event occured"
-  transactions: [transaction!]!
+  transactions: [transaction!]
 }
 
 type loanBid @entity {

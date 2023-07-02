@@ -34,6 +34,9 @@ export function handleContractOpened(event: ContractOpenedEvent): void {
   entity.status = "PENDING";
   entity.expiry = event.params.expiry;
   let transactions = entity.transactions;
+  if (transactions == null) {
+    transactions = [];
+  }
   transactions.push(updateTxType(event, "LOAN_REQUEST_OPEN"));
   entity.transactions = transactions;
   let tokenLockerEntity = lockId.load(event.params.lockId.toHexString());
@@ -54,6 +57,9 @@ export function handleContractActive(event: ContractActiveEvent): void {
     entity.expiry = event.params.expiry;
     entity.checkPointBlock = event.params.checkPointBlock;
     let transactions = entity.transactions;
+    if (transactions == null) {
+      transactions = [];
+    }
     transactions.push(updateTxType(event, "LOAN_REQUEST_ACTIVE"));
     entity.transactions = transactions;
     let bidEntity = loanBid.load(
@@ -85,6 +91,9 @@ export function handleContractClosed(event: ContractClosedEvent): void {
   if (entity != null) {
     entity.status = "CLOSED";
     let transactions = entity.transactions;
+    if (transactions == null) {
+      transactions = [];
+    }
     transactions.push(updateTxType(event, "LOAN_REQUEST_CANCELLED"));
     entity.transactions = transactions;
     entity.save();
@@ -96,6 +105,9 @@ export function handleLiquidation(event: LiquidateEvent): void {
   if (entity != null) {
     entity.status = "LIQUIDATED";
     let transactions = entity.transactions;
+    if (transactions == null) {
+      transactions = [];
+    }
     transactions.push(updateTxType(event, "LOAN_LIQUIDATED"));
     entity.transactions = transactions;
     let borrower = fetchAccountStatistics(entity.borrower);
@@ -156,6 +168,9 @@ export function handleLoansRepaid(event: LoanRepaidEvent): void {
     lender.revenue = lender.revenue.plus(interest);
     lender.save();
     let transactions = entity.transactions;
+    if (transactions == null) {
+      transactions = [];
+    }
     transactions.push(updateTxType(event, "LOAN_REPAID"));
     entity.transactions = transactions;
     entity.save();
@@ -171,6 +186,9 @@ export function handleNewBid(event: BidOpenedEvent): void {
   let loanContractEntity = loanContract.load(id);
   if (loanContractEntity) {
     let transactions = loanContractEntity.transactions;
+    if (transactions == null) {
+      transactions = [];
+    }
     transactions.push(updateTxType(event, "LOAN_REQUEST_BID_OPEN"));
     loanContractEntity.transactions = transactions;
     loanContractEntity.save();
@@ -194,6 +212,9 @@ export function handleLostBid(event: LostBidEvent): void {
     let loanContractEntity = loanContract.load(id);
     if (loanContractEntity) {
       let transactions = loanContractEntity.transactions;
+      if (transactions == null) {
+        transactions = [];
+      }
       transactions.push(updateTxType(event, "LOAN_REQUEST_BID_LOST"));
       loanContractEntity.transactions = transactions;
       loanContractEntity.save();
@@ -211,6 +232,9 @@ export function handleCancelledBid(event: BidClosedEvent): void {
     let loanContractEntity = loanContract.load(id);
     if (loanContractEntity) {
       let transactions = loanContractEntity.transactions;
+      if (transactions == null) {
+        transactions = [];
+      }
       transactions.push(updateTxType(event, "LOAN_REQUEST_BID_CANCELLED"));
       loanContractEntity.transactions = transactions;
       loanContractEntity.save();
