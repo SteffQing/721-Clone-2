@@ -27,7 +27,9 @@ import {
 
 export function handleContractOpened(event: ContractOpenedEvent): void {
   let entity = new loanContract(event.params.id.toHexString());
-  entity.borrower = fetchAccount(event.params.borrower).id;
+  entity.borrower = fetchAccountStatistics(
+    fetchAccount(event.params.borrower).id
+  ).id.toHexString();
   entity.lender = constants.ADDRESS_ZERO;
   entity.amount = event.params.amount;
   entity.interest = event.params.interest;
@@ -284,7 +286,7 @@ function updateCollectionStats(
     collectionEntity.largestLoan = loanAmount;
   }
   collectionEntity.averageLoanAmount = collectionEntity.totalLoanVolume.div(
-    BigInt.fromI32(loanCount).toBigDecimal()
+    BigInt.fromI32(collectionEntity.totalLoanCount).toBigDecimal()
   );
   collectionEntity.totalPaidInterest = collectionEntity.totalPaidInterest.plus(
     interest

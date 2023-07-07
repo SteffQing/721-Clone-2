@@ -204,7 +204,7 @@ export function updateProtocolLoanData(
       entity.largestLoan = loanAmount;
     }
     entity.averageLoanAmount = entity.totalLoanVolume.div(
-      BigInt.fromI32(loanCount).toBigDecimal()
+      BigInt.fromI32(entity.totalLoanCount).toBigDecimal()
     );
     entity.totalPaidInterest = entity.totalPaidInterest.plus(interest);
     entity.save();
