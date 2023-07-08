@@ -44,6 +44,7 @@ export function handleContractOpened(event: ContractOpenedEvent): void {
   let tokenLockerEntity = lockId.load(event.params.lockId.toHexString());
   if (tokenLockerEntity != null) {
     tokenLockerEntity.contract = event.params.id.toHexString();
+    entity.collection = tokenLockerEntity.collection;
     tokenLockerEntity.save();
   }
   entity.save();
@@ -128,13 +129,7 @@ export function handleLiquidation(event: LiquidateEvent): void {
       entity.amount,
       interest
     );
-    let lockIdEntity = lockId.load(entity.lockId._id);
-    if (lockIdEntity) {
-      log.warning("LockIdEntity: {}", [entity.lockId._id]);
-      let collection = lockIdEntity.collection;
-      log.warning("Collection: {}", [collection]);
-      updateCollectionStats(collection, entity.amount, interest);
-    }
+    updateCollectionStats(entity.collection, entity.amount, interest);
     let lender = fetchAccountStatistics(entity.lender);
     lender.earnedInterest = lender.earnedInterest.plus(interest);
     lender.revenue = lender.revenue.plus(interest);
@@ -154,13 +149,7 @@ export function handleLoansRepaid(event: LoanRepaidEvent): void {
       entity.amount,
       interest
     );
-    let lockIdEntity = lockId.load(entity.lockId._id);
-    if (lockIdEntity) {
-      log.warning("LockIdEntity: {}", [entity.lockId._id]);
-      let collection = lockIdEntity.collection;
-      log.warning("Collection: {}", [collection]);
-      updateCollectionStats(collection, entity.amount, interest);
-    }
+    updateCollectionStats(entity.collection, entity.amount, interest);
     let borrower = fetchAccountStatistics(entity.borrower);
     borrower.paidInterest = borrower.paidInterest.plus(interest);
     borrower.points = borrower.points + 20;

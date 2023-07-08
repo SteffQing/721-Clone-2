@@ -684,6 +684,9 @@ type loanContract @entity {
 
   " Transactions in which a loan contract event occured"
   transactions: [transaction!]
+
+  " The loan contract collection statistics "
+  collection: String!
 }
 
 type loanBid @entity {
