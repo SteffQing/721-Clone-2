@@ -347,9 +347,6 @@ type collectionLoanStatistic @entity {
   " total loans taken in this collection "
   totalLoanCount: Int!
 
-  " average apr paid for in this collection "
-  averageApr: Int!
-
   " largest single loan taken for the collection "
   largestLoan: BigDecimal!
 
