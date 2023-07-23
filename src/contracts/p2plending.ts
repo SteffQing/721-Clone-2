@@ -17,7 +17,7 @@ import {
   UpdateProtocolFees as UpdateProtocolFeesEvent,
 } from "../../generated/P2PLending/P2PLending";
 import { constants } from "../graphprotcol-utls";
-import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
 import { fetchAccount, fetchAccountStatistics } from "../utils/erc721";
 import {
   updateProtocolFeeParameters,
@@ -77,11 +77,13 @@ export function handleContractActive(event: ContractActiveEvent): void {
     }
     // Update borrower and lender loan data
     lender.lendCount = lender.lendCount + 1;
-    lender.totalLentAmount = entity.amount;
+    lender.totalLentAmount = lender.totalLentAmount.plus(entity.amount);
     lender.points = lender.points + 20;
     let borrower = fetchAccountStatistics(entity.borrower);
     borrower.borrowCount = borrower.borrowCount + 1;
-    borrower.totalBorrowedAmount = entity.amount;
+    borrower.totalBorrowedAmount = borrower.totalBorrowedAmount.plus(
+      entity.amount
+    );
 
     lender.save();
     borrower.save();
@@ -120,7 +122,8 @@ export function handleLiquidation(event: LiquidateEvent): void {
     );
     let securityFee: BigInt = constants.BIGINT_ZERO;
     if (protocolEntity) {
-      securityFee = BigInt.fromI32(protocolEntity.securityFee);
+      let _securityFee = BigInt.fromI32(protocolEntity.securityFee);
+      securityFee = _securityFee.times(BigInt.fromI32(10));
     }
     let _securityFee = entity.amount.times(securityFee);
     let interest = _securityFee.div(BigInt.fromI32(10000));
