@@ -63,6 +63,7 @@ export function fetchRegistry(address: Address): collection {
     collectionEntity.totalVolume = constants.BIGDECIMAL_ZERO;
     collectionEntity.topSale = constants.BIGDECIMAL_ZERO;
     collectionEntity.valueLocked = constants.BIGINT_ZERO;
+    collectionEntity.floorPrice = constants.BIGDECIMAL_ZERO;
 
     collectionEntity.save();
   }

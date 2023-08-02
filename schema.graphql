@@ -315,6 +315,9 @@ type collection @entity {
   " Top Sale ever "
   topSale: BigDecimal!
 
+  " Floor price of collection "
+  floorPrice: BigDecimal!
+
   " Hourly info about the collection "
   hourlyCollectionSnapshot: [hourlyCollectionSnapshot!]!
     @derivedFrom(field: "collection")

@@ -104,6 +104,7 @@ export function handleItemListed(event: ItemListedEvent): void {
   entity.token = Token.id;
   entity.collection = collectionEntity.id;
   entity.salePrice = event.params.price;
+  setFloor(collectionEntity.id, event.params.price);
   entity.timestamp = event.block.timestamp.toI32();
   updateTxType(event, "FIXED_SALE_LISTING", tokenEntityId);
   entity.state = "FIXEDSALE";
@@ -246,4 +247,18 @@ export function clearSaleInfo(entity: saleInfo): void {
   entity.validity = null;
   entity.auctionBids = null;
   entity.timestamp = 0;
+}
+
+export function setFloor(_collection: string, salePrice: BigInt): void {
+  let collectionEntity = collection.load(_collection);
+  let zero = constants.BIGDECIMAL_ZERO;
+  if (collectionEntity) {
+    let floor = collectionEntity.floorPrice;
+    if (salePrice === null) return;
+    let _salePrice = salePrice.toBigDecimal();
+    if (floor.gt(_salePrice) || floor.equals(zero)) {
+      collectionEntity.floorPrice = _salePrice;
+      collectionEntity.save();
+    }
+  }
 }
