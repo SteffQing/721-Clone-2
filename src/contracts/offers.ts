@@ -1,4 +1,4 @@
-import { BigInt, log, store } from "@graphprotocol/graph-ts";
+import { BigInt, store } from "@graphprotocol/graph-ts";
 import {
   collectionOffer,
   collectionTokenOffer,
@@ -53,6 +53,10 @@ export function handleCollectionOfferAccepted(
     let saleInfoEntity = saleInfo.load(tokenEntityId);
     if (saleInfoEntity == null) {
       saleInfoEntity = new saleInfo(tokenEntityId);
+      saleInfoEntity.token = tokenEntityId;
+      saleInfoEntity.collection = collectionAddress;
+      saleInfoEntity.state = "NONE";
+      saleInfoEntity.timestamp = event.block.timestamp.toI32();
     }
     clearSaleInfo(saleInfoEntity);
     saleInfoEntity.save();
@@ -148,6 +152,10 @@ export function handleTokenOfferAccepted(event: TokenOfferAcceptedEvent): void {
     let saleInfoEntity = saleInfo.load(tokenEntityId);
     if (saleInfoEntity == null) {
       saleInfoEntity = new saleInfo(tokenEntityId);
+      saleInfoEntity.token = tokenEntityId;
+      saleInfoEntity.collection = collectionAddress;
+      saleInfoEntity.state = "NONE";
+      saleInfoEntity.timestamp = event.block.timestamp.toI32();
     }
     clearSaleInfo(saleInfoEntity);
     updateTxType(event, "TOKEN_OFFER_ACCEPTED", tokenEntityId);

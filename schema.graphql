@@ -46,6 +46,10 @@ enum TransactionType {
   LOAN_REPAID
   TOKENS_LOCKED
 }
+enum CollectionStatus {
+  VERIFIED
+  UNVERIFIED
+}
 
 type supportedCollection @entity {
   " the ID is supportedcollection and collection address "
@@ -62,6 +66,9 @@ type supportedCollection @entity {
 
   " The collection address "
   collection: collection!
+
+  " The collection status "
+  status: CollectionStatus!
 }
 
 type CollectionMetadata @entity {
@@ -94,7 +101,7 @@ type CollectionMetadata @entity {
 }
 
 type saleInfo @entity {
-  " The ID is the concatenation of the saleinfo, collection address, and token ID "
+  " The ID is the concatenation of kcc, collection address, and token ID "
   id: ID!
 
   " The collection address for the sale "
@@ -718,6 +725,22 @@ type _Schema_
         entity: "collection"
         fields: [{ name: "id", name: "name", name: "symbol" }]
       }
+      { entity: "TokenMetadata", fields: [{ name: "name" }] }
+      {
+        entity: "TokenAttribute"
+        fields: [{ name: "traitType", name: "value" }]
+      }
+    ]
+  )
+  @fulltext(
+    name: "searchCollection"
+    language: en
+    algorithm: rank
+    include: [
+      { entity: "collection", fields: [{ name: "id" }] }
+      { entity: "collection", fields: [{ name: "name" }] }
+      { entity: "collection", fields: [{ name: "symbol" }] }
+      { entity: "token", fields: [{ name: "tokenId" }] }
       { entity: "TokenMetadata", fields: [{ name: "name" }] }
       {
         entity: "TokenAttribute"

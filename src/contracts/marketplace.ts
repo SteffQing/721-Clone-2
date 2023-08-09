@@ -38,6 +38,7 @@ export function handleCollectionAdded(event: CollectionAddedEvent): void {
   entity.creator = event.params.collectionFeeCollector;
   entity.royaltyFees = event.params.royaltyFees;
   entity.collection = collectionEntity.id;
+  entity.status = "UNVERIFIED";
 
   entity.save();
 }
@@ -54,6 +55,7 @@ export function handleCollectionUpdate(event: CollectionUpdatedEvent): void {
   if (entity != null) {
     entity.creator = event.params.collectionFeeCollector;
     entity.royaltyFees = event.params.royaltyFees;
+    entity.status = "UNVERIFIED";
 
     entity.save();
   }
@@ -67,6 +69,7 @@ export function handleCollectionVerification(
     // Add ipfs hash
     let ipfsHash = event.params.ipfs;
     entity.metadata = ipfsHash;
+    entity.status = "VERIFIED";
     // create template to fetch the data
     CollectionDataTemplate.create(ipfsHash);
     entity.save();
