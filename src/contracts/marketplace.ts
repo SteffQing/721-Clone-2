@@ -261,8 +261,13 @@ export function clearSaleInfo(entity: saleInfo): void {
 
 export function setFloor(_collection: collection): void {
   let listingPrices = _collection.listingPrices;
-  let floor = listingPrices[0];
-  for (let i = 1; i < listingPrices.length; i++) {
+  if (listingPrices.length == 1) {
+    _collection.floorPrice = listingPrices[0].toBigDecimal();
+    _collection.save();
+    return;
+  }
+  let floor = listingPrices[1];
+  for (let i = 2; i < listingPrices.length; i++) {
     if (listingPrices[i] < floor) {
       floor = listingPrices[i];
     }
