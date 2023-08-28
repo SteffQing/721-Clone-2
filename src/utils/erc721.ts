@@ -64,6 +64,7 @@ export function fetchRegistry(address: Address): collection {
     collectionEntity.topSale = constants.BIGDECIMAL_ZERO;
     collectionEntity.valueLocked = constants.BIGINT_ZERO;
     collectionEntity.floorPrice = constants.BIGDECIMAL_ZERO;
+    collectionEntity.listingPrices = [constants.BIGINT_ZERO];
 
     collectionEntity.save();
   }

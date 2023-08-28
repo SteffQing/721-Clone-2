@@ -85,6 +85,7 @@ export function handleItemDelisted(event: ItemDelistedEvent): void {
     .concat(tokenId.toString());
   let entity = saleInfo.load(tokenEntityId);
   if (entity != null) {
+    updateDelistOrSoldFloor(collectionAddress, entity.salePrice as BigInt);
     clearSaleInfo(entity);
     updateTxType(event, "FIXED_SALE_CANCELLED", tokenEntityId);
     entity.save();
@@ -107,7 +108,7 @@ export function handleItemListed(event: ItemListedEvent): void {
   entity.token = Token.id;
   entity.collection = collectionEntity.id;
   entity.salePrice = event.params.price;
-  setFloor(collectionEntity.id, event.params.price);
+  updateListingFloor(collectionEntity.id, event.params.price);
   entity.timestamp = event.block.timestamp.toI32();
   updateTxType(event, "FIXED_SALE_LISTING", tokenEntityId);
   entity.state = "FIXEDSALE";
@@ -138,6 +139,7 @@ export function handleItemSold(event: ItemSoldEvent): void {
   buyerEntity.points = buyerEntity.points + 20;
   buyerEntity.save();
   updateTxType(event, "FIXED_SALE_SOLD", tokenEntityId);
+  updateDelistOrSoldFloor(collectionAddress, event.params.price);
 }
 
 export function handleItemUpdated(event: ItemUpdatedEvent): void {
@@ -150,9 +152,14 @@ export function handleItemUpdated(event: ItemUpdatedEvent): void {
   );
   let entity = saleInfo.load(tokenEntity.id);
   if (entity != null) {
+    let oldPrice = entity.salePrice;
     entity.salePrice = event.params.newPrice;
     updateTxType(event, "FIXED_SALE_UPDATED", tokenEntity.id);
-
+    updateUpdateFloor(
+      _collection.id,
+      oldPrice as BigInt,
+      event.params.newPrice
+    );
     entity.save();
   }
 }
@@ -252,16 +259,54 @@ export function clearSaleInfo(entity: saleInfo): void {
   entity.timestamp = 0;
 }
 
-export function setFloor(_collection: string, salePrice: BigInt): void {
+export function setFloor(_collection: collection): void {
+  let listingPrices = _collection.listingPrices;
+  let floor = listingPrices[0];
+  for (let i = 1; i < listingPrices.length; i++) {
+    if (listingPrices[i] < floor) {
+      floor = listingPrices[i];
+    }
+  }
+  _collection.floorPrice = floor.toBigDecimal();
+  _collection.save();
+}
+function updateListingFloor(_collection: string, salePrice: BigInt): void {
   let collectionEntity = collection.load(_collection);
-  let zero = constants.BIGDECIMAL_ZERO;
   if (collectionEntity) {
-    let floor = collectionEntity.floorPrice;
-    if (salePrice === null) return;
-    let _salePrice = salePrice.toBigDecimal();
-    if (floor.gt(_salePrice) || floor.equals(zero)) {
-      collectionEntity.floorPrice = _salePrice;
+    let listingPrices = collectionEntity.listingPrices;
+    listingPrices.push(salePrice);
+    collectionEntity.listingPrices = listingPrices;
+    collectionEntity.save();
+    setFloor(collectionEntity);
+  }
+}
+function updateUpdateFloor(
+  _collection: string,
+  prevSalePrice: BigInt,
+  nextSalePrice: BigInt
+): void {
+  let collectionEntity = collection.load(_collection);
+  if (collectionEntity) {
+    let listingPrices = collectionEntity.listingPrices;
+    let index = listingPrices.indexOf(prevSalePrice);
+    if (index > -1) {
+      listingPrices[index] = nextSalePrice;
+      collectionEntity.listingPrices = listingPrices;
       collectionEntity.save();
     }
+    setFloor(collectionEntity);
+  }
+}
+function updateDelistOrSoldFloor(_collection: string, salePrice: BigInt): void {
+  let collectionEntity = collection.load(_collection);
+  if (collectionEntity) {
+    let listingPrices = collectionEntity.listingPrices;
+    let index = listingPrices.indexOf(salePrice);
+    if (index > -1) {
+      listingPrices.splice(index, 1);
+      collectionEntity.listingPrices = listingPrices;
+      collectionEntity.save();
+    }
+    setFloor(collectionEntity);
   }
 }
