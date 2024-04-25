@@ -9,7 +9,7 @@ import { Transfer as TransferEvent } from "../../generated/IERC721/IERC721";
 
 import { fetchAccount, fetchRegistry, fetchToken } from "../utils/erc721";
 
-import { constants, events, transactions } from "../graphprotcol-utls";
+import { events, transactions } from "../graphprotcol-utls";
 
 import { store, BigInt } from "@graphprotocol/graph-ts";
 
@@ -74,11 +74,7 @@ export function handleTransfer(event: TransferEvent): void {
 
       receiverAccountCollection.save();
     }
-    if (receiverAddress.id == constants.Auction.toLowerCase()) {
-      token.owner = senderAddress.id;
-    } else {
-      token.owner = receiverAddress.id;
-    }
+    token.owner = receiverAddress.id;
 
     collection.save();
     token.save();
@@ -93,7 +89,6 @@ export function handleTransfer(event: TransferEvent): void {
     transferEntity.receiverAddress = receiverAddress.id;
     transferEntity.blockNumber = event.block.number.toI32();
     transferEntity.timestamp = event.block.timestamp.toI32();
-    transferEntity.amount = constants.BIGDECIMAL_ZERO;
     transferEntity.save();
 
     let tx = transaction.load(event.transaction.hash.toHexString());
@@ -101,8 +96,6 @@ export function handleTransfer(event: TransferEvent): void {
       let transferArray = tx.transfers;
       transferArray.push(transferEntity.id);
 
-      let newTransferCount = tx.unmatchedTransferCount + 1;
-      tx.unmatchedTransferCount = newTransferCount;
       tx.transfers = transferArray;
       tx.txType = "TRANSFER";
       tx.save();

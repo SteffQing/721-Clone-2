@@ -4,18 +4,21 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ steffqing/721-clone2",
+    "deploy": "graph deploy --studio distantfi",
     "create-local": "graph create --node http://localhost:8020/ steffqing/721-clone2",
     "remove-local": "graph remove --node http://localhost:8020/ steffqing/721-clone2",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 steffqing/721-clone2",
-    "test": "graph test"
+    "test": "graph test",
+    "auth": "graph auth --studio 0f9149111edbd94dc8ebe6bf20de00b1"
   },
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.51.0",
-    "@graphprotocol/graph-ts": "0.31.0",
-    "@openzeppelin/contracts": "^4.9.0"
+    "@graphprotocol/graph-cli": "^0.71.0",
+    "@graphprotocol/graph-ts": "^0.35.1",
+    "@openzeppelin/contracts": "^4.9.0",
+    "typescript": "^5.4.5"
   },
   "devDependencies": {
-    "matchstick-as": "0.5.2"
+    "@types/node": "^20.12.7",
+    "matchstick-as": "^0.6.0"
   }
 }

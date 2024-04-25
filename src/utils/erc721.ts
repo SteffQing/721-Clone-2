@@ -59,12 +59,6 @@ export function fetchRegistry(address: Address): collection {
       ? null
       : fetchAccount(try_owner.value).id;
     collectionEntity.supportsMetadata = supportsInterface(erc721, "5b5e139f"); // ERC721Metadata
-    collectionEntity.totalSales = 0;
-    collectionEntity.totalVolume = constants.BIGDECIMAL_ZERO;
-    collectionEntity.topSale = constants.BIGDECIMAL_ZERO;
-    collectionEntity.valueLocked = constants.BIGINT_ZERO;
-    collectionEntity.floorPrice = constants.BIGDECIMAL_ZERO;
-    collectionEntity.listingPrices = [constants.BIGINT_ZERO];
 
     collectionEntity.save();
   }
@@ -76,7 +70,7 @@ export function fetchToken(
   id: BigInt,
   timestamp: BigInt
 ): token {
-  let tokenid = "kcc/".concat(collection.id.concat("/").concat(id.toString()));
+  let tokenid = "eth/".concat(collection.id.concat("/").concat(id.toString()));
   let tokenEntity = token.load(tokenid);
   let timeout = BigInt.fromI32(2592000);
   let lastUpdate = tokenEntity
@@ -100,11 +94,7 @@ export function fetchToken(
     collection.totalSupply = try_totalSupply.reverted
       ? BigInt.fromI32(0)
       : try_totalSupply.value;
-    let _collections = constants.Collections.map<string>(
-      (_collection: string) => _collection.toLowerCase()
-    );
-    let isCollectionSupported = _collections.includes(collection.id);
-    if (isCollectionSupported && tokenURI.reverted == false) {
+    if (tokenURI.reverted == false) {
       const tokenIpfsHash = tokenURI.value;
       let ipfsHash = checkUri(tokenIpfsHash);
       if (ipfsHash.length > 0) {
@@ -135,8 +125,6 @@ export function fetchAccountStatistics(address: string): accountStatistic {
   if (accountEntity == null) {
     accountEntity = new accountStatistic(addressBytes);
     accountEntity.points = 0;
-    accountEntity.salesVolume = constants.BIGINT_ZERO;
-    accountEntity.totalSales = 0;
     accountEntity.paidInterest = constants.BIGINT_ZERO;
     accountEntity.earnedInterest = constants.BIGINT_ZERO;
     accountEntity.borrowCount = 0;

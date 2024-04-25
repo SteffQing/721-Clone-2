@@ -1,8 +1,3 @@
-enum SaleType {
-  FIXEDSALE
-  AUCTIONSALE
-  NONE
-}
 enum LoanStatus {
   PENDING
   ACTIVE
@@ -23,19 +18,6 @@ enum LockStatus {
 }
 enum TransactionType {
   TRANSFER
-  FIXED_SALE_LISTING
-  FIXED_SALE_SOLD
-  FIXED_SALE_CANCELLED
-  FIXED_SALE_UPDATED
-  AUCTION_SALE_LISTING
-  AUCTION_SALE_CANCELLED
-  AUCTION_BID_CREATED
-  AUCTION_BID_ACCEPTED
-  COLLECTION_OFFER_ACCEPTED
-  TOKEN_OFFER_CREATED
-  TOKEN_OFFER_UPDATED
-  TOKEN_OFFER_ACCEPTED
-  TOKEN_OFFER_DELETED
   LOAN_REQUEST_OPEN
   LOAN_REQUEST_CANCELLED
   LOAN_REQUEST_ACTIVE
@@ -100,95 +82,6 @@ type CollectionMetadata @entity {
   website: String
 }
 
-type saleInfo @entity {
-  " The ID is the concatenation of kcc, collection address, and token ID "
-  id: ID!
-
-  " The collection address for the sale "
-  collection: collection!
-
-  " The token ID involved in the sale "
-  token: token!
-
-  " The price of the token "
-  salePrice: BigInt
-
-  " The state of the sale; fixedSale, auctionSale and none "
-  state: SaleType!
-
-  " The starting bid for the auction if sale is an auction "
-  startingBid: BigInt
-
-  " The highest bid and current for the auction "
-  highestBid: BigInt
-
-  " The highest bidder for the auction "
-  highestBidder: account
-
-  " The time the auction ends "
-  validity: BigInt
-
-  " The transactions for the sales "
-  transactions: [transaction!] @derivedFrom(field: "saleInfo")
-
-  " An array of bid entities "
-  auctionBids: [auctionBid!]
-
-  " timestamp of the last listing "
-  timestamp: Int!
-}
-
-type auctionBid @entity {
-  " The id is the collection address, token ID and its bidder "
-  id: ID!
-
-  " The bidder "
-  bidder: account!
-
-  " The bid value "
-  bid: BigInt!
-}
-
-type collectionOffer @entity {
-  " ID is the concatenation of collection address and the offer creator "
-  id: ID!
-
-  " The collection address for the offer "
-  collection: collection!
-
-  " The offer creator "
-  creator: account!
-
-  " The offer amount or value "
-  amount: BigInt!
-
-  " The total count of nfts the Offer creator is offering to buy "
-  total: Int!
-
-  " The validity period of the offer "
-  validity: BigInt!
-}
-
-type collectionTokenOffer @entity {
-  " ID is the concatenation of collection, creator address and tokenId "
-  id: ID!
-
-  " The collection address for the offer "
-  collection: collection!
-
-  " The offer creator "
-  creator: account!
-
-  " The token ID involved in the offer "
-  token: token!
-
-  " The offer amount/value "
-  value: BigInt!
-
-  " The validity period of the offer "
-  validity: BigInt!
-}
-
 type contract @entity {
   id: ID!
   asERC721: collection
@@ -200,12 +93,6 @@ type accountStatistic @entity {
 
   " The points earned by this account "
   points: Int!
-
-  " The total volume of sales for this account "
-  salesVolume: BigInt!
-
-  " The total sales for this account "
-  totalSales: Int!
 
   " total interest paid as a borrower "
   paidInterest: BigInt!
@@ -254,15 +141,6 @@ type account @entity {
   " M:M relationship for Accounts and Collections "
   accountCollection: [accountCollection!] @derivedFrom(field: "account")
 
-  " Tokens bidded by account"
-  auctionBids: [saleInfo!] @derivedFrom(field: "highestBidder")
-
-  " Collection offers made by account "
-  collectionOffers: [collectionOffer!] @derivedFrom(field: "creator")
-
-  " Token offer made for by account "
-  tokenCollectionOffers: [collectionTokenOffer!] @derivedFrom(field: "creator")
-
   " locked nfts "
   lockedIds: [lockId!] @derivedFrom(field: "depositor")
 
@@ -292,9 +170,6 @@ type collection @entity {
   " Total Supply of Tokens "
   totalSupply: BigInt
 
-  " Total Value locked for offers "
-  valueLocked: BigInt!
-
   " Mint Price "
   mintPrice: BigDecimal
 
@@ -304,41 +179,8 @@ type collection @entity {
   " Tokens for the collection"
   tokens: [token!]! @derivedFrom(field: "collection")
 
-  " Tokens in the collection for sale"
-  saleInfos: [saleInfo!] @derivedFrom(field: "collection")
-
-  " offers made for tokens in this collection "
-  collectionOffers: [collectionOffer!] @derivedFrom(field: "collection")
-
   " Collection supports metadata "
   supportsMetadata: Boolean
-
-  " Total sales "
-  totalSales: Int!
-
-  " Total volume "
-  totalVolume: BigDecimal!
-
-  " Top Sale ever "
-  topSale: BigDecimal!
-
-  " Floor price of collection "
-  floorPrice: BigDecimal!
-
-  " Listing prices of items in collection "
-  listingPrices: [BigInt!]!
-
-  " Hourly info about the collection "
-  hourlyCollectionSnapshot: [hourlyCollectionSnapshot!]!
-    @derivedFrom(field: "collection")
-
-  " Daily info about the collection "
-  dailyCollectionSnapshot: [dailyCollectionSnapshot!]!
-    @derivedFrom(field: "collection")
-
-  " Weekly info about the collection "
-  weeklyCollectionSnapshot: [weeklyCollectionSnapshot!]!
-    @derivedFrom(field: "collection")
 
   " M:M relationship for Accounts and Collections "
   accountCollection: [accountCollection!]! @derivedFrom(field: "collection")
@@ -371,7 +213,7 @@ type collectionLoanStatistic @entity {
 }
 
 type token @entity {
-  " kcc / Collection Addrress - Token Id "
+  " eth / Collection Addrress - Token Id "
   id: ID!
 
   " The collection address "
@@ -394,12 +236,6 @@ type token @entity {
 
   " Transfers involving this token "
   transfers: [transfer!]! @derivedFrom(field: "token")
-
-  " token saleInfo "
-  saleInfo: saleInfo @derivedFrom(field: "token")
-
-  " offers made for this token "
-  tokenOffers: [collectionTokenOffer!] @derivedFrom(field: "token")
 }
 
 type TokenMetadata @entity {
@@ -460,23 +296,14 @@ type transaction @entity {
   " Address who initiated the transaction "
   transactionFrom: Bytes!
 
-  " Count of how many transfers were not matched to a sale "
-  unmatchedTransferCount: Int!
-
   " Transfers that occured within the transaction "
   transfers: [transfer!]!
-
-  " Sale events that occured within the transaction "
-  sales: [sale!] @derivedFrom(field: "transaction")
 
   " Gas Spent "
   gasPrice: BigInt
 
   " transaction type to reference "
   txType: TransactionType
-
-  " saleInfo reference if the transaction involved a listing "
-  saleInfo: saleInfo
 }
 
 type transfer @entity {
@@ -503,101 +330,6 @@ type transfer @entity {
 
   " Block Number "
   blockNumber: Int!
-
-  " The amount of KCS/WKCS paid"
-  amount: BigDecimal!
-
-  " matched sale event for the transfer "
-  matchedSale: sale
-}
-
-type sale @entity {
-  " Block Number and Event Id in which the sale event occured"
-  id: ID!
-
-  " tx that the sale occured in "
-  transaction: transaction!
-
-  " the amount of the sale "
-  amount: BigDecimal!
-}
-
-type hourlyCollectionSnapshot @entity {
-  " The collection address - The hour "
-  id: ID!
-
-  " Unix Hour (Timestamp / 3600 * 3600) "
-  timestamp: Int
-
-  " The collection address "
-  collection: collection!
-
-  " The hourly volume "
-  hourlyVolume: BigDecimal!
-
-  " Number of hourly transactions "
-  hourlyTransactions: Int
-
-  " Average sale amount for the day "
-  hourlyAvgSale: BigDecimal!
-
-  " Hourly top sales "
-  topSale: BigDecimal!
-
-  " Hourly bottom sales "
-  bottomSale: BigDecimal!
-}
-
-type dailyCollectionSnapshot @entity {
-  " The collection address - The day "
-  id: ID!
-
-  " Unix Day (Timestamp / 86400 * 86400) "
-  timestamp: Int
-
-  " The collection address "
-  collection: collection!
-
-  " The daily volume "
-  dailyVolume: BigDecimal!
-
-  " Number of daily transactions "
-  dailyTransactions: Int
-
-  " Average sale amount for the day "
-  dailyAvgSale: BigDecimal!
-
-  " Daily top sales "
-  topSale: BigDecimal!
-
-  " Daily bottom sales "
-  bottomSale: BigDecimal!
-}
-
-type weeklyCollectionSnapshot @entity {
-  " The collection address - The week "
-  id: ID!
-
-  " Unix Week (Timestamp / 604800 * 604800) "
-  timestamp: Int
-
-  " The collection address "
-  collection: collection!
-
-  " The monthly volume "
-  weeklyVolume: BigDecimal!
-
-  " Number of monthly transactions "
-  weeklyTransactions: Int
-
-  " Average sale amount for the day "
-  weeklyAvgSale: BigDecimal!
-
-  " Weekly top sales "
-  topSale: BigDecimal!
-
-  " Weekly bottom sales "
-  bottomSale: BigDecimal!
 }
 
 type protocol @entity {

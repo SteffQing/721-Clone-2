@@ -23,7 +23,7 @@ import {
   updateProtocolFeeParameters,
   updateProtocolLoanData,
   updateTxType,
-} from "./marketplace";
+} from "./protocol";
 
 export function handleContractOpened(event: ContractOpenedEvent): void {
   let entity = new loanContract(event.params.id.toHexString());
@@ -66,10 +66,7 @@ export function handleContractActive(event: ContractActiveEvent): void {
     transactions.push(updateTxType(event, "LOAN_REQUEST_ACTIVE"));
     entity.transactions = transactions;
     let bidEntity = loanBid.load(
-      event.params.id
-        .toHexString()
-        .concat("-")
-        .concat(lender.id.toHexString())
+      event.params.id.toHexString().concat("-").concat(lender.id.toHexString())
     );
     if (bidEntity != null) {
       bidEntity.status = "ACCEPTED";
@@ -271,18 +268,16 @@ function updateCollectionStats(
   let loanCount = collectionEntity.totalLoanCount;
   let loanAmount = amount.toBigDecimal();
   collectionEntity.totalLoanCount = loanCount + 1;
-  collectionEntity.totalLoanVolume = collectionEntity.totalLoanVolume.plus(
-    loanAmount
-  );
+  collectionEntity.totalLoanVolume =
+    collectionEntity.totalLoanVolume.plus(loanAmount);
   if (loanAmount.gt(collectionEntity.largestLoan)) {
     collectionEntity.largestLoan = loanAmount;
   }
   collectionEntity.averageLoanAmount = collectionEntity.totalLoanVolume.div(
     BigInt.fromI32(collectionEntity.totalLoanCount).toBigDecimal()
   );
-  collectionEntity.totalPaidInterest = collectionEntity.totalPaidInterest.plus(
-    interest
-  );
+  collectionEntity.totalPaidInterest =
+    collectionEntity.totalPaidInterest.plus(interest);
   collectionEntity.save();
 }
 

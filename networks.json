@@ -1,8 +1,8 @@
 {
-  "mumbai": {
-    "Marketplace": {
-      "address": "0xCbbDAdfdd3c19ce2183756D405F1Db2431C175c4",
-      "startBlock": 37160697
+  "base": {
+    "Protocol": {
+      "address": "0xC14c58b9986279CC6f685e3D51e0367BCFeB2b05",
+      "startBlock": 12603676
     }
   }
 }

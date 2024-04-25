@@ -4,9 +4,9 @@ import {
   Withdraw as WithdrawEvent,
   Liquidate as LiquidateEvent,
 } from "../../generated/TokenLocker/TokenLocker";
-import { collection, lockId } from "../../generated/schema";
+import { lockId } from "../../generated/schema";
 import { fetchAccount } from "../utils/erc721";
-import { updateTxType } from "./marketplace";
+import { updateTxType } from "./protocol";
 
 export function handleDeposit(event: DepositEvent): void {
   let entity = new lockId(event.params.lockId.toHexString());
@@ -27,7 +27,7 @@ export function loopCollection(collection: string, tokens: BigInt[]): string[] {
   let tokensArray: string[] = [];
   for (let j = 0; j < collectionTokens; j++) {
     let token = tokens[j];
-    let tokenEntityId = `kcc/${collection}/${token}`;
+    let tokenEntityId = `eth/${collection}/${token}`;
     tokensArray.push(tokenEntityId);
   }
   return tokensArray;
